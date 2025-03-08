@@ -13,7 +13,6 @@ const GestionEtudiants = () => {
     { id: 4, name: 'Simone de Beauvoir', matricule: 'U1004', parcours: 'Lettres', classe: 'Licence', status: 'Payé 2 tranche' },
     { id: 5, name: 'Blaise Pascal', matricule: 'U1005', parcours: 'Mathématiques', classe: 'Master', status: 'Inscrit' },
     { id: 6, name: 'René Descartes', matricule: 'U1006', parcours: 'Philosophie', classe: 'Doctorat', status: 'Payé 3 tranche' },
-    // Ajoutez d'autres étudiants au besoin
   ];
 
   const [students, setStudents] = useState(initialStudents);

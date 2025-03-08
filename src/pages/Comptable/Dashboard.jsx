@@ -78,7 +78,7 @@ const ComptableDashboard = () => {
           </div>
           <div>
             <h2 className="text-xl font-semibold">Montant par Tranche</h2>
-            <p className="text-2xl font-bold">{paymentsByTranche} €</p>
+            <p className="text-2xl font-bold">{paymentsByTranche} Ar</p>
           </div>
         </motion.div>
       </div>

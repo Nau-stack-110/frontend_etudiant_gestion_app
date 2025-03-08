@@ -4,9 +4,9 @@ import { FaQrcode } from 'react-icons/fa';
 
 const Etudiants = () => {
   const initialStudents = [
-    { id: 1, nom: 'Alice Dupont', matricule: 'E1234', classe: 'Licence 1' },
-    { id: 2, nom: 'Bob Martin', matricule: 'E5678', classe: 'Licence 2' },
-    { id: 3, nom: 'Charlie Durand', matricule: 'E9012', classe: 'Master 1' },
+    { id: 1, nom: 'Alice kely', matricule: 'E1234', classe: 'Licence 1' },
+    { id: 2, nom: 'Chychya', matricule: 'E5678', classe: 'Licence 2' },
+    { id: 3, nom: 'Arisuh be', matricule: 'E9012', classe: 'Master 1' },
   ];
 
   const [students] = useState(initialStudents);

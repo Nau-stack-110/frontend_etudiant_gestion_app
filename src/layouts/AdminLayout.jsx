@@ -3,8 +3,6 @@ import Sidebar from '../components/Sidebar';
 import adminImage from '../assets/Linux.png';
 
 const AdminLayout = () => {
-  // Pour la simulation, on définit ici les infos de l'administrateur connecté.
-  // Vous pouvez adapter cela pour qu'il soit récupéré dynamiquement (via contexte, Redux ou une API).
   const admin = {
     name: "John Doe",
     image: adminImage

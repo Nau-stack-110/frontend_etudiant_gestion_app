@@ -24,10 +24,9 @@ const App = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
-      {/* Pour tester, redirige la racine vers la partie Comptable */}
       <Route path="/" element={<Navigate to="/admin" />} />
 
-      {/* Routes Admin (à conserver si besoin, mais non accessibles avec la redirection ci-dessus) */}
+      {/* Routes Admin */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="etudiants" element={<GestionEtudiants />} />
@@ -46,7 +45,6 @@ const App = () => {
         <Route path="profile" element={<ComptableProfile />} />
       </Route>
 
-      {/* Redirige toute route inconnue vers /login */}
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );

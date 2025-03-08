@@ -7,15 +7,12 @@ import 'react-datepicker/dist/react-datepicker.css';
 import Swal from 'sweetalert2';
 
 const Paiements = () => {
-  // Exemple de données initiales (montants en Ariary)
   const initialPayments = [
-    { id: 1, date: '2025-01-04', etudiant: 'Alice', montant: '150000', tranche: 'Tranche 1' },
-    { id: 2, date: '2025-02-10', etudiant: 'Bob', montant: '200000', tranche: 'Tranche 2' },
-    { id: 3, date: '2025-03-10', etudiant: 'Charlie', montant: '120000', tranche: 'Tranche 1' },
-    // Autres paiements d'exemple si nécessaire
+    { id: 1, date: '2025-01-04', etudiant: 'Alice kely', montant: '150000', tranche: 'Tranche 1' },
+    { id: 2, date: '2025-02-10', etudiant: 'Boby', montant: '200000', tranche: 'Tranche 2' },
+    { id: 3, date: '2025-03-10', etudiant: 'Arishu be', montant: '120000', tranche: 'Tranche 1' },
   ];
 
-  // États principaux
   const [payments, setPayments] = useState(initialPayments);
   const [search, setSearch] = useState('');
   const [selectedTranche, setSelectedTranche] = useState('All');
@@ -72,7 +69,6 @@ const Paiements = () => {
       timer: 1500,
       showConfirmButton: false,
     });
-    // Ajoutez ici la logique d'export en PDF (ex. avec jsPDF)
   };
 
   const handleExportExcel = () => {
@@ -83,7 +79,6 @@ const Paiements = () => {
       timer: 1500,
       showConfirmButton: false,
     });
-    // Ajoutez ici la logique d'export en Excel (ex. avec XLSX)
   };
 
   // Traitement du formulaire d'ajout
@@ -110,7 +105,6 @@ const Paiements = () => {
 
     setPayments([...payments, paymentToAdd]);
     setIsAddModalOpen(false);
-    // Réinitialiser le formulaire avec la complétion automatique pour Tranche 1
     setNewPayment({ etudiant: '', tranche: 'Tranche 1', montant: defaultAmounts["Tranche 1"] });
     Swal.fire({
       icon: 'success',

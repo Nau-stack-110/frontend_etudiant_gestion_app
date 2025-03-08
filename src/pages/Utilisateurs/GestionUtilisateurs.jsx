@@ -7,13 +7,12 @@ import { FaEdit, FaTrash, FaFileExcel, FaFilePdf } from 'react-icons/fa';
 const GestionUtilisateurs = () => {
   // Exemple de données pour des utilisateurs universitaires
   const initialUsers = [
-    { id: 1, name: 'Alice Martin', email: 'alice@univ.fr', role: 'Admin', status: 'Actif' },
-    { id: 2, name: 'Bob Dupont', email: 'bob@univ.fr', role: 'Comptable', status: 'Actif' },
-    { id: 3, name: 'Charlie Durand', email: 'charlie@univ.fr', role: 'Étudiant', status: 'Actif' },
-    { id: 4, name: 'Diane Petit', email: 'diane@univ.fr', role: 'Étudiant', status: 'Actif' },
-    { id: 5, name: 'Eve Bernard', email: 'eve@univ.fr', role: 'Étudiant', status: 'Actif' },
-    { id: 6, name: 'Fabrice Legrand', email: 'fabrice@univ.fr', role: 'Admin', status: 'Actif' },
-    // Ajoutez plus d'utilisateurs selon vos besoins
+    { id: 1, name: 'Alice Martin', email: 'alice@gmail.com', role: 'Admin', status: 'Actif' },
+    { id: 2, name: 'Bob Dupont', email: 'bob@univ.mh', role: 'Comptable', status: 'Actif' },
+    { id: 3, name: 'Charlie Durand', email: 'charlie@gmail.com', role: 'Étudiant', status: 'Actif' },
+    { id: 4, name: 'Diane Petit', email: 'diane@gmail.com', role: 'Étudiant', status: 'Actif' },
+    { id: 5, name: 'Eve Bernard', email: 'eve@gmail.com', role: 'Étudiant', status: 'Actif' },
+    { id: 6, name: 'Fabrice Legrand', email: 'fabrice@univ.mg', role: 'Admin', status: 'Actif' },
   ];
 
   const [users, setUsers] = useState(initialUsers);
@@ -83,7 +82,7 @@ const GestionUtilisateurs = () => {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setCurrentPage(1); // Réinitialisation de la pagination lors d'une recherche
+                setCurrentPage(1); 
               }}
               className="w-full border border-gray-300 p-2 rounded-md"
             />

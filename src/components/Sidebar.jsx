@@ -1,16 +1,18 @@
 import { AiFillSetting } from "react-icons/ai"; 
 import { NavLink, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { 
   FaTachometerAlt, 
-  FaShoppingCart, 
-  FaChartLine, 
+  FaUserGraduate,
+  FaMoneyBillWave,
   FaUsers, 
   FaBars, 
   FaTimes, 
   FaSignOutAlt,
-  FaUniversity
+  FaUniversity,
+  FaChevronLeft,
+  FaChevronRight
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -19,9 +21,9 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { name: 'Dashboard', icon: <FaTachometerAlt />, path: '.' },
-    { name: 'Étudiants', icon: <FaShoppingCart />, path: 'etudiants' },
-    { name: 'Paiements', icon: <FaChartLine />, path: 'paiements' },
+    { name: 'Tableau de bord', icon: <FaTachometerAlt />, path: '.' },
+    { name: 'Étudiants', icon: <FaUserGraduate />, path: 'etudiants' },
+    { name: 'Paiements', icon: <FaMoneyBillWave />, path: 'paiements' },
     { name: 'Utilisateurs', icon: <FaUsers />, path: 'users' },
     { name: 'Paramètres', icon: <AiFillSetting />, path: 'settings' },
   ];
@@ -33,83 +35,94 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Menu Button repositionné à gauche */}
-      <button
+      {/* Mobile Menu Button */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg text-white"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-indigo-600 rounded-lg text-white shadow-lg"
       >
         {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-      </button>
+      </motion.button>
 
-      <aside
-        className={`fixed md:relative z-40 flex flex-col justify-between bg-gradient-to-b from-gray-800 to-gray-900 text-white min-h-screen transition-all duration-300 ease-in-out
-          ${collapsed ? "w-16" : "w-64"} 
-          ${isMobileMenuOpen ? "left-0" : "-left-full md:left-0"}`}
-      >
-        {/* Header : Logo et bouton de navigation */}
-        <div>
-          <div className="flex items-center justify-between p-4 border-b border-gray-700">
-            <div className="flex items-center space-x-2 text-2xl font-bold whitespace-nowrap overflow-hidden">
-              {collapsed ? (
-                "🏫"
-              ) : (
-                <>
-                  <FaUniversity className="text-yellow-400" />
-                  <span className="ml-2">University ESDS</span>
-                </>
-              )}
+      <AnimatePresence>
+        <motion.aside
+          initial={{ x: collapsed ? -240 : 0 }}
+          animate={{ x: 0 }}
+          exit={{ x: -240 }}
+          className={`fixed md:sticky top-0 left-0 z-40 h-screen bg-gradient-to-b from-indigo-700 to-indigo-900 text-white transition-all duration-300 ease-in-out
+            ${collapsed ? "w-20" : "w-64"} 
+            ${isMobileMenuOpen ? "left-0" : "-left-full md:left-0"}`}
+        >
+          {/* Header */}
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between p-4 border-b border-indigo-600">
+              <motion.div 
+                initial={false}
+                animate={{ opacity: collapsed ? 0 : 1 }}
+                className="flex items-center space-x-3"
+              >
+                <FaUniversity className="text-2xl text-white" />
+                <span className={`font-bold text-xl whitespace-nowrap overflow-hidden transition-all duration-300 ${collapsed ? 'w-0' : 'w-40'}`}>
+                  GestEtu Pro
+                </span>
+              </motion.div>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setCollapsed(!collapsed)}
+                className="hidden md:block text-white hover:bg-indigo-600 p-2 rounded-lg transition-colors"
+              >
+                {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
+              </motion.button>
             </div>
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="hidden md:block text-xl hover:text-blue-400 transition-colors"
-              title={collapsed ? "Afficher la sidebar" : "Cacher la sidebar"}
-            >
-              {collapsed ? <FaBars /> : <FaTimes />}
-            </button>
-          </div>
 
-          {/* Menu de navigation */}
-          <nav className="mt-4 px-2">
-            {menuItems.map((item, index) => (
-              <motion.div
-                key={index}
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto py-4 px-2">
+              {menuItems.map((item, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mb-1"
+                >
+                  <NavLink
+                    to={item.path}
+                    end={item.path === '.'}
+                    className={({ isActive }) =>
+                      `flex items-center p-3 rounded-lg transition-all duration-200 ${
+                        isActive 
+                          ? "bg-indigo-500 shadow-lg" 
+                          : "hover:bg-indigo-600"
+                      }`
+                    }
+                  >
+                    <div className="text-xl">{item.icon}</div>
+                    <span className={`ml-3 text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${collapsed ? 'w-0' : 'w-40'}`}>
+                      {item.name}
+                    </span>
+                  </NavLink>
+                </motion.div>
+              ))}
+            </nav>
+
+            {/* Footer avec bouton de déconnexion */}
+            <div className="p-4 border-t border-indigo-600">
+              <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="mb-1"
+                onClick={handleLogout}
+                className="flex items-center w-full p-3 rounded-lg hover:bg-red-500 transition-colors"
               >
-                <NavLink
-                  to={item.path} 
-                  end={item.path === '.'}
-                  className={({ isActive }) =>
-                    `flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors ${
-                      isActive ? "bg-gray-700 shadow-lg" : ""
-                    }`
-                  }
-                  title={collapsed ? item.name : ""}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="mr-3 text-xl text-blue-400">{item.icon}</div>
-                  {!collapsed && <span className="text-sm">{item.name}</span>}
-                </NavLink>
-              </motion.div>
-            ))}
-          </nav>
-        </div>
-
-        {/* Bouton de déconnexion */}
-        <div className="p-2 border-t border-gray-700">
-          <button
-            onClick={handleLogout}
-            className="flex items-center w-full p-3 rounded-lg hover:bg-gray-700 transition-colors"
-            title="Déconnexion"
-          >
-            <div className="mr-3 text-xl text-red-400">
-              <FaSignOutAlt />
+                <FaSignOutAlt className="text-xl" />
+                <span className={`ml-3 text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${collapsed ? 'w-0' : 'w-40'}`}>
+                  Déconnexion
+                </span>
+              </motion.button>
             </div>
-            {!collapsed && <span className="text-sm">Déconnexion</span>}
-          </button>
-        </div>
-      </aside>
+          </div>
+        </motion.aside>
+      </AnimatePresence>
     </>
   );
 };

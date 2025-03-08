@@ -7,13 +7,12 @@ import { FaEdit, FaTrash, FaFileExcel, FaFilePdf } from 'react-icons/fa';
 const GestionPaiements = () => {
   // Exemples de données pour des paiements universitaires
   const initialPayments = [
-    { id: 1, date: '2023-10-01', student: 'Jean Dupont', amount: '500 Ar', tranche: '1ère tranche' },
-    { id: 2, date: '2023-09-15', student: 'Alice Martin', amount: '700 Ar', tranche: '2ème tranche' },
-    { id: 3, date: '2023-09-20', student: 'Bob Dupont', amount: '450 Ar', tranche: '1ère tranche' },
-    { id: 4, date: '2023-10-05', student: 'Diane Petit', amount: '600 Ar', tranche: '2ème tranche' },
-    { id: 5, date: '2023-10-10', student: 'Eric Laurent', amount: '550 Ar', tranche: '1ère tranche' },
-    { id: 6, date: '2023-10-12', student: 'Fabrice Legrand', amount: '650 Ar', tranche: '2ème tranche' },
-    // Ajoutez d'autres paiements selon vos besoins
+    { id: 1, date: '2025-10-01', student: 'Jean nary', amount: '500 Ar', tranche: '1ère tranche' },
+    { id: 2, date: '2025-09-15', student: 'Alice kely', amount: '700 Ar', tranche: '2ème tranche' },
+    { id: 3, date: '2025-09-20', student: 'Bob be', amount: '450 Ar', tranche: '1ère tranche' },
+    { id: 4, date: '2025-10-05', student: 'Diane kely', amount: '600 Ar', tranche: '2ème tranche' },
+    { id: 5, date: '2025-10-10', student: 'Erica andria', amount: '550 Ar', tranche: '1ère tranche' },
+    { id: 6, date: '2025-10-12', student: 'Fabrice jean', amount: '650 Ar', tranche: '2ème tranche' },
   ];
 
   const [payments, setPayments] = useState(initialPayments);
