@@ -82,7 +82,7 @@ const Login = () => {
             transition={{ delay: 0.2 }}
           >
             <div className="text-6xl mb-6">🎓</div>
-            <h1 className="text-3xl font-bold mb-4">GestEtu Pro</h1>
+            <h1 className="text-3xl font-bold mb-4">EducGes</h1>
             <p className="text-lg opacity-90">
               Plateforme de gestion universitaire intégrée
             </p>
