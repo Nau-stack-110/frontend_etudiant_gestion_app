@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  FiUser, FiMail, FiLock, FiBell, 
-  FiMonitor, FiGlobe, FiSave, FiCalendar, FiDollarSign 
+  FiUser, FiLock, FiBell, 
+  FiMonitor, FiSave, FiCalendar, FiDollarSign 
 } from 'react-icons/fi';
 
 const Settings = () => {
@@ -286,7 +286,7 @@ const Settings = () => {
                 <div>
                   <h3 className="font-medium">Notifications système</h3>
                   <p className="text-sm text-gray-500">
-                    Recevoir des notifications dans l'application
+                    Recevoir des notifications dans l&apos;application
                   </p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
