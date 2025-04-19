@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiSearch, FiEdit2, FiTrash2, FiDollarSign, FiCheck, FiX, FiUsers } from 'react-icons/fi';
+import { FiSearch, FiEdit2, FiTrash2, FiX, FiUsers } from 'react-icons/fi';
 import axios from 'axios';
 
 const Fees = () => {
@@ -10,9 +10,10 @@ const Fees = () => {
   const [fees, setFees] = useState([]);
   const [students, setStudents] = useState([]);
   const [levels, setLevels] = useState([]);
+  const [tarifs, setTarifs] = useState([]); // Nouvelle state pour les tarifs
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState('create'); // 'create' ou 'update'
+  const [modalMode, setModalMode] = useState('create');
   const [formData, setFormData] = useState({
     etudiant: '',
     designation: '',
@@ -20,7 +21,7 @@ const Fees = () => {
     methode_paiement: '',
     reference: '',
     date_de_paiement: '',
-    annee_academique: 1 // Par défaut pour 2024-2025
+    annee_academique: 1,
   });
   const [editId, setEditId] = useState(null);
   const [matriculeSearch, setMatriculeSearch] = useState('');
@@ -31,20 +32,23 @@ const Fees = () => {
   const feesUrl = `${apiBaseUrl}/frais-scolarite/`;
   const studentsUrl = `${apiBaseUrl}/etudiants/`;
   const levelsUrl = `${apiBaseUrl}/niveau/`;
+  const tarifsUrl = `${apiBaseUrl}/tarifs/`;
 
   // Récupération des données
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [feesResponse, studentsResponse, levelsResponse] = await Promise.all([
+        const [feesResponse, studentsResponse, levelsResponse, tarifsResponse] = await Promise.all([
           axios.get(feesUrl),
           axios.get(studentsUrl),
-          axios.get(levelsUrl)
+          axios.get(levelsUrl),
+          axios.get(tarifsUrl), // Récupération des tarifs
         ]);
         setFees(feesResponse.data);
         setStudents(studentsResponse.data);
         setLevels(levelsResponse.data);
+        setTarifs(tarifsResponse.data);
       } catch (error) {
         console.error('Erreur lors de la récupération des données:', error);
       } finally {
@@ -54,23 +58,37 @@ const Fees = () => {
     fetchData();
   }, []);
 
+  // Mettre à jour le montant payé automatiquement lorsque la désignation change
+  useEffect(() => {
+    if (formData.designation && formData.etudiant) {
+      const selectedStudent = students.find((s) => s.id === parseInt(formData.etudiant));
+      const selectedTarif = tarifs.find(
+        (t) => t.designation === formData.designation && t.niveau === selectedStudent?.niveau
+      );
+      if (selectedTarif) {
+        setFormData((prev) => ({ ...prev, montant_paye: selectedTarif.montant }));
+      }
+    }
+  }, [formData.designation, formData.etudiant, tarifs, students]);
+
   // Fonction pour associer les données des étudiants aux frais
-  const enrichedFees = fees.map(fee => {
-    const student = students.find(s => s.id === fee.etudiant);
+  const enrichedFees = fees.map((fee) => {
+    const student = students.find((s) => s.id === fee.etudiant);
     return {
       ...fee,
       studentName: student ? `${student.nom} ${student.prenom}` : 'Inconnu',
       studentId: student ? student.matricule : 'N/A',
       level: student ? student.niveau_nom : 'N/A',
-      mention: student ? student.mention_nom : 'N/A'
+      mention: student ? student.mention_nom : 'N/A',
     };
   });
 
   // Filtrage et recherche
-  const filteredFees = enrichedFees.filter(fee =>
-    (selectedLevel === 'all' || fee.level === selectedLevel) &&
-    (fee.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      fee.studentId.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredFees = enrichedFees.filter(
+    (fee) =>
+      (selectedLevel === 'all' || fee.level === selectedLevel) &&
+      (fee.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        fee.studentId.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Pagination
@@ -81,15 +99,17 @@ const Fees = () => {
   );
 
   // Étudiants par niveau
-  const studentsByLevel = levels.map(level => ({
+  const studentsByLevel = levels.map((level) => ({
     ...level,
-    students: students.filter(student => student.niveau_nom === level.nom),
-    studentCount: students.filter(student => student.niveau_nom === level.nom).length
+    students: students.filter((student) => student.niveau_nom === level.nom),
+    studentCount: students.filter((student) => student.niveau_nom === level.nom).length,
   }));
 
   // Recherche par matricule dans le modal
-  const filteredStudents = students.filter(student =>
-    matriculeSearch ? student.matricule.toLowerCase().includes(matriculeSearch.toLowerCase()) : true
+  const filteredStudents = students.filter((student) =>
+    matriculeSearch
+      ? student.matricule.toLowerCase().includes(matriculeSearch.toLowerCase())
+      : true
   );
 
   // Gestion du modal
@@ -99,12 +119,12 @@ const Fees = () => {
     if (mode === 'update' && fee) {
       setFormData({
         etudiant: fee.etudiant,
-        designation: fee.designation,
+        designation: fee.designation_nom, 
         montant_paye: fee.montant_paye,
         methode_paiement: fee.methode_paiement,
         reference: fee.reference,
         date_de_paiement: fee.date_de_paiement.split('T')[0],
-        annee_academique: fee.annee_academique
+        annee_academique: fee.annee_academique,
       });
       setEditId(fee.id);
     } else {
@@ -115,7 +135,7 @@ const Fees = () => {
         methode_paiement: '',
         reference: '',
         date_de_paiement: '',
-        annee_academique: 1
+        annee_academique: 1,
       });
       setEditId(null);
     }
@@ -135,12 +155,16 @@ const Fees = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...formData,
+        montant_paye: parseFloat(formData.montant_paye), 
+      };
       if (modalMode === 'create') {
-        await axios.post(feesUrl, formData);
+        await axios.post(feesUrl, payload);
         const response = await axios.get(feesUrl);
         setFees(response.data);
       } else {
-        await axios.put(`${feesUrl}${editId}/`, formData);
+        await axios.put(`${feesUrl}${editId}/`, payload);
         const response = await axios.get(feesUrl);
         setFees(response.data);
       }
@@ -155,11 +179,25 @@ const Fees = () => {
     if (window.confirm('Voulez-vous vraiment supprimer ce paiement ?')) {
       try {
         await axios.delete(`${feesUrl}${id}/`);
-        setFees(fees.filter(fee => fee.id !== id));
+        setFees(fees.filter((fee) => fee.id !== id));
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
       }
     }
+  };
+
+  // Liste des méthodes de paiement
+  const paymentMethods = [
+    { value: 'BOA', label: 'Banque BOA' },
+    { value: 'BNI', label: 'Banque BNI' },
+    { value: 'autres', label: 'Autres' },
+  ];
+
+  // Filtrer les désignations en fonction du niveau de l'étudiant sélectionné
+  const getAvailableDesignations = () => {
+    if (!formData.etudiant) return [];
+    const selectedStudent = students.find((s) => s.id === parseInt(formData.etudiant));
+    return tarifs.filter((tarif) => tarif.niveau === selectedStudent?.niveau);
   };
 
   return (
@@ -181,7 +219,7 @@ const Fees = () => {
 
       {/* Cartes des niveaux */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {studentsByLevel.map(level => (
+        {studentsByLevel.map((level) => (
           <motion.div
             key={level.id}
             initial={{ opacity: 0, y: 20 }}
@@ -200,7 +238,6 @@ const Fees = () => {
                 <p className="text-xl font-semibold text-gray-900">{level.studentCount} étudiant(s)</p>
               </div>
             </div>
-
           </motion.div>
         ))}
       </div>
@@ -224,7 +261,7 @@ const Fees = () => {
             onChange={(e) => setSelectedLevel(e.target.value)}
           >
             <option value="all">Tous les niveaux</option>
-            {levels.map(level => (
+            {levels.map((level) => (
               <option key={level.id} value={level.nom}>{level.nom}</option>
             ))}
           </select>
@@ -267,7 +304,7 @@ const Fees = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {paginatedFees.map(fee => (
+                {paginatedFees.map((fee) => (
                   <motion.tr
                     key={fee.id}
                     initial={{ opacity: 0 }}
@@ -305,20 +342,22 @@ const Fees = () => {
           <div className="flex items-center justify-between rounded-lg bg-white px-4 py-3 shadow-md">
             <div className="flex items-center">
               <span className="text-sm text-gray-700">
-                Affichage de {(currentPage - 1) * itemsPerPage + 1} à {Math.min(currentPage * itemsPerPage, filteredFees.length)} sur {filteredFees.length} paiements
+                Affichage de {(currentPage - 1) * itemsPerPage + 1} à{' '}
+                {Math.min(currentPage * itemsPerPage, filteredFees.length)} sur {filteredFees.length}{' '}
+                paiements
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
-                onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                 disabled={currentPage === 1}
               >
                 Précédent
               </button>
               <button
                 className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
-                onClick={() => setCurrentPage(page => page + 1)}
+                onClick={() => setCurrentPage((page) => page + 1)}
                 disabled={currentPage === totalPages}
               >
                 Suivant
@@ -364,7 +403,7 @@ const Fees = () => {
                   required
                 >
                   <option value="">Sélectionner un étudiant</option>
-                  {filteredStudents.map(student => (
+                  {filteredStudents.map((student) => (
                     <option key={student.id} value={student.id}>
                       {student.nom} {student.prenom} ({student.matricule})
                     </option>
@@ -379,12 +418,14 @@ const Fees = () => {
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                   required
+                  disabled={!formData.etudiant} // Désactiver si aucun étudiant n'est sélectionné
                 >
                   <option value="">Sélectionner une désignation</option>
-                  <option value="4">Inscription</option>
-                  <option value="1">Tranche 1</option>
-                  <option value="2">Tranche 2</option>
-                  <option value="3">Tranche 3</option>
+                  {getAvailableDesignations().map((tarif) => (
+                    <option key={tarif.designation} value={tarif.designation}>
+                      {tarif.designation}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -396,6 +437,7 @@ const Fees = () => {
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                   required
+                  readOnly
                 />
               </div>
               <div>
@@ -408,9 +450,11 @@ const Fees = () => {
                   required
                 >
                   <option value="">Sélectionner une méthode</option>
-                  <option value="BOA">BOA</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Carte">Carte</option>
+                  {paymentMethods.map((method) => (
+                    <option key={method.value} value={method.value}>
+                    {method.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
