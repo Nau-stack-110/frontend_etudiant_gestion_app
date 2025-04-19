@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiSearch, FiEdit2, FiTrash2, FiX, FiUsers } from 'react-icons/fi';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const Fees = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -10,7 +11,8 @@ const Fees = () => {
   const [fees, setFees] = useState([]);
   const [students, setStudents] = useState([]);
   const [levels, setLevels] = useState([]);
-  const [tarifs, setTarifs] = useState([]); // Nouvelle state pour les tarifs
+  const [tarifs, setTarifs] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('create');
@@ -21,7 +23,7 @@ const Fees = () => {
     methode_paiement: '',
     reference: '',
     date_de_paiement: '',
-    annee_academique: 1,
+    annee_academique: '',
   });
   const [editId, setEditId] = useState(null);
   const [matriculeSearch, setMatriculeSearch] = useState('');
@@ -33,24 +35,37 @@ const Fees = () => {
   const studentsUrl = `${apiBaseUrl}/etudiants/`;
   const levelsUrl = `${apiBaseUrl}/niveau/`;
   const tarifsUrl = `${apiBaseUrl}/tarifs/`;
+  const academicYearsUrl = `${apiBaseUrl}/annee-academique/`;
 
   // Récupération des données
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [feesResponse, studentsResponse, levelsResponse, tarifsResponse] = await Promise.all([
+        const [feesResponse, studentsResponse, levelsResponse, tarifsResponse, academicYearsResponse] = await Promise.all([
           axios.get(feesUrl),
           axios.get(studentsUrl),
           axios.get(levelsUrl),
-          axios.get(tarifsUrl), // Récupération des tarifs
+          axios.get(tarifsUrl),
+          axios.get(academicYearsUrl),
         ]);
         setFees(feesResponse.data);
         setStudents(studentsResponse.data);
         setLevels(levelsResponse.data);
         setTarifs(tarifsResponse.data);
+        setAcademicYears(academicYearsResponse.data);
+        // Set default academic year to active year
+        const activeYear = academicYearsResponse.data.find(year => year.active);
+        if (activeYear) {
+          setFormData(prev => ({ ...prev, annee_academique: activeYear.id }));
+        }
       } catch (error) {
         console.error('Erreur lors de la récupération des données:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Erreur lors de la récupération des données',
+        });
       } finally {
         setLoading(false);
       }
@@ -74,12 +89,14 @@ const Fees = () => {
   // Fonction pour associer les données des étudiants aux frais
   const enrichedFees = fees.map((fee) => {
     const student = students.find((s) => s.id === fee.etudiant);
+    const academicYear = academicYears.find((y) => y.id === fee.annee_academique);
     return {
       ...fee,
       studentName: student ? `${student.nom} ${student.prenom}` : 'Inconnu',
       studentId: student ? student.matricule : 'N/A',
       level: student ? student.niveau_nom : 'N/A',
       mention: student ? student.mention_nom : 'N/A',
+      academicYear: academicYear ? academicYear.annee : 'N/A',
     };
   });
 
@@ -119,7 +136,7 @@ const Fees = () => {
     if (mode === 'update' && fee) {
       setFormData({
         etudiant: fee.etudiant,
-        designation: fee.designation_nom, 
+        designation: fee.designation,
         montant_paye: fee.montant_paye,
         methode_paiement: fee.methode_paiement,
         reference: fee.reference,
@@ -128,6 +145,7 @@ const Fees = () => {
       });
       setEditId(fee.id);
     } else {
+      const activeYear = academicYears.find(year => year.active);
       setFormData({
         etudiant: '',
         designation: '',
@@ -135,7 +153,7 @@ const Fees = () => {
         methode_paiement: '',
         reference: '',
         date_de_paiement: '',
-        annee_academique: 1,
+        annee_academique: activeYear ? activeYear.id : '',
       });
       setEditId(null);
     }
@@ -157,31 +175,75 @@ const Fees = () => {
     try {
       const payload = {
         ...formData,
-        montant_paye: parseFloat(formData.montant_paye), 
+        montant_paye: parseFloat(formData.montant_paye),
+        annee_academique: parseInt(formData.annee_academique),
+        designation: parseInt(formData.designation),
       };
       if (modalMode === 'create') {
         await axios.post(feesUrl, payload);
         const response = await axios.get(feesUrl);
         setFees(response.data);
+        Swal.fire({
+          icon: 'success',
+          title: 'Succès',
+          text: 'Paiement créé avec succès',
+          timer: 1500,
+          showConfirmButton: false,
+        });
       } else {
         await axios.put(`${feesUrl}${editId}/`, payload);
         const response = await axios.get(feesUrl);
         setFees(response.data);
+        Swal.fire({
+          icon: 'success',
+          title: 'Succès',
+          text: 'Paiement mis à jour avec succès',
+          timer: 1500,
+          showConfirmButton: false,
+        });
       }
       closeModal();
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: error.response?.data?.designation?.[0] || 'Erreur lors de l\'enregistrement du paiement',
+      });
     }
   };
 
   // Suppression
   const handleDelete = async (id) => {
-    if (window.confirm('Voulez-vous vraiment supprimer ce paiement ?')) {
+    const result = await Swal.fire({
+      title: 'Confirmer la suppression',
+      text: 'Voulez-vous vraiment supprimer ce paiement ?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Oui, supprimer',
+      cancelButtonText: 'Annuler',
+    });
+
+    if (result.isConfirmed) {
       try {
         await axios.delete(`${feesUrl}${id}/`);
         setFees(fees.filter((fee) => fee.id !== id));
+        Swal.fire({
+          icon: 'success',
+          title: 'Supprimé',
+          text: 'Paiement supprimé avec succès',
+          timer: 1500,
+          showConfirmButton: false,
+        });
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Erreur lors de la suppression du paiement',
+        });
       }
     }
   };
@@ -235,7 +297,7 @@ const Fees = () => {
               </div>
               <div className="ml-4">
                 <h3 className="text-sm font-medium text-gray-500">{level.nom}</h3>
-                <p className="text-xl font-semibold text-gray-900">{level.studentCount} étudiant(s)</p>
+                <p className="text-xl font-semibold text-gray-900">{level.studentCount}</p>
               </div>
             </div>
           </motion.div>
@@ -296,6 +358,9 @@ const Fees = () => {
                     Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Année Académique
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Méthode
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -321,6 +386,7 @@ const Fees = () => {
                     <td className="whitespace-nowrap px-6 py-4">{fee.designation_nom}</td>
                     <td className="whitespace-nowrap px-6 py-4">₣ {parseFloat(fee.montant_paye).toLocaleString()}</td>
                     <td className="whitespace-nowrap px-6 py-4">{new Date(fee.date_de_paiement).toLocaleDateString()}</td>
+                    <td className="whitespace-nowrap px-6 py-4">{fee.academicYear}</td>
                     <td className="whitespace-nowrap px-6 py-4">{fee.methode_paiement}</td>
                     <td className="whitespace-nowrap px-6 py-4">
                       <div className="flex space-x-3">
@@ -418,11 +484,11 @@ const Fees = () => {
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                   required
-                  disabled={!formData.etudiant} // Désactiver si aucun étudiant n'est sélectionné
+                  disabled={!formData.etudiant}
                 >
                   <option value="">Sélectionner une désignation</option>
                   {getAvailableDesignations().map((tarif) => (
-                    <option key={tarif.designation} value={tarif.designation}>
+                    <option key={tarif.id} value={tarif.designation}>
                       {tarif.designation}
                     </option>
                   ))}
@@ -452,7 +518,7 @@ const Fees = () => {
                   <option value="">Sélectionner une méthode</option>
                   {paymentMethods.map((method) => (
                     <option key={method.value} value={method.value}>
-                    {method.label}
+                      {method.label}
                     </option>
                   ))}
                 </select>
@@ -478,6 +544,23 @@ const Fees = () => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Année Académique</label>
+                <select
+                  name="annee_academique"
+                  value={formData.annee_academique}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  required
+                >
+                  <option value="">Sélectionner une année</option>
+                  {academicYears.map((year) => (
+                    <option key={year.id} value={year.id}>
+                      {year.annee} {year.active ? '(Active)' : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex justify-end space-x-2">
                 <button
