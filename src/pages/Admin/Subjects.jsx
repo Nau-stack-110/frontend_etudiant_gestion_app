@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiFilter } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlus, FiSearch } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
 const Subjects = () => {

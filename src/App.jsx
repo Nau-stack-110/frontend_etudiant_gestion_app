@@ -4,7 +4,6 @@ import Login from './pages/Auth/Login';
 import Signup from './pages/Auth/Signup';
 
 import AdminLayout from './layouts/AdminLayout';
-// Import des composants du dashboard (à créer)
 import Dashboard from './pages/Admin/Dashboard';
 import Students from './pages/Admin/Students';
 import Users from './pages/Admin/Users';

@@ -55,7 +55,7 @@ const AdminLayout = () => {
       <motion.aside
         initial={{ x: -300 }}
         animate={{ x: isSidebarOpen ? 0 : -300 }}
-        className={`fixed left-0 z-40 flex h-screen flex-col bg-indigo-800 text-white
+        className={`fixed left-0 z-40 flex h-screen flex-col bg-indigo-800
           ${isSidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300`}
       >
         {/* Admin Profile */}
@@ -69,7 +69,7 @@ const AdminLayout = () => {
               />
               <div>
                 <h2 className="font-semibold">{currentAdmin.name}</h2>
-                <p className="text-sm text-indigo-300">{currentAdmin.role}</p>
+                <p className="text-sm">{currentAdmin.role}</p>
               </div>
             </div>
             <button onClick={() => setIsSidebarOpen(false)}>
@@ -112,7 +112,7 @@ const AdminLayout = () => {
       {/* Main Content */}
       <div className={`flex-1 ${isSidebarOpen ? 'ml-64' : 'ml-0'} transition-all duration-300`}>
         <header className="bg-white shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center justify-between px-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
               className={`text-gray-600 ${isSidebarOpen ? 'hidden' : 'block'}`}

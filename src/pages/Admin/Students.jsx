@@ -61,6 +61,7 @@ const Students = () => {
     // ... autres étudiants
   ];
 
+
   const handleShowQRCode = (student) => {
     setSelectedStudent(student);
     setShowQRCode(true);

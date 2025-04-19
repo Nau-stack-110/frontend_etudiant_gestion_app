@@ -1,211 +1,452 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiMail, FiLock, FiUser } from 'react-icons/fi';
+import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiSearch, FiUser, FiBook, FiShield, FiDollarSign, FiPlus, FiX } from 'react-icons/fi';
+import { FaFilter } from 'react-icons/fa';
 import Swal from 'sweetalert2';
+
+const BASEURL = "http://127.0.0.1:8000/api";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRole, setSelectedRole] = useState('all');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    username: '',
+    email: '',
+    is_superuser: false,
+    isEtudiant: false,
+    isProf: false,
+    isComptable: false,
+  });
+  const usersPerPage = 10;
 
-  // Données factices pour la démonstration
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john.doe@univ.mg",
-      role: "Admin",
-      status: "Actif",
-      lastLogin: "2024-03-20 10:30",
-      permissions: ["all"]
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane.smith@univ.mg",
-      role: "Secrétaire",
-      status: "Actif",
-      lastLogin: "2024-03-19 15:45",
-      permissions: ["read", "write"]
-    },
-    // ... autres utilisateurs
-  ];
-
-  const handleAddUser = () => {
-    Swal.fire({
-      title: 'Ajouter un Utilisateur',
-      html: `
-        <div class="space-y-4">
-          <input id="name" class="swal2-input" placeholder="Nom complet">
-          <input id="email" class="swal2-input" type="email" placeholder="Email">
-          <select id="role" class="swal2-input">
-            <option value="admin">Administrateur</option>
-            <option value="secretary">Secrétaire</option>
-            <option value="manager">Gestionnaire</option>
-          </select>
-          <div class="flex flex-col gap-2">
-            <label class="flex items-center">
-              <input type="checkbox" class="swal2-checkbox" value="read">
-              <span class="ml-2">Lecture</span>
-            </label>
-            <label class="flex items-center">
-              <input type="checkbox" class="swal2-checkbox" value="write">
-              <span class="ml-2">Écriture</span>
-            </label>
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Ajouter',
-      cancelButtonText: 'Annuler',
-      preConfirm: () => {
-        // Logique d'ajout de l'utilisateur
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${BASEURL}/user-profile/`);
+        if (!response.ok) {
+          throw new Error('Erreur de la récuperation des utilisateurs');
+        }
+        const data = await response.json();
+        
+        const transformedUsers = data.map(user => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.is_superuser ? 'Administrateur' :
+                user.isEtudiant ? 'Étudiant' :
+                user.isProf ? 'Professeur' :
+                user.isComptable ? 'Comptable' : 'Inconnu'
+        }));
+        
+        setUsers(transformedUsers);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
       }
+    };
+
+    fetchUsers();
+  }, []);
+
+  // Calculate user type counts
+  const userCounts = useMemo(() => ({
+    Administrateur: users.filter(user => user.role === 'Administrateur').length,
+    Étudiant: users.filter(user => user.role === 'Étudiant').length,
+    Professeur: users.filter(user => user.role === 'Professeur').length,
+    Comptable: users.filter(user => user.role === 'Comptable').length,
+  }), [users]);
+
+  // Filter and search logic
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const matchesSearch = 
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesRole = selectedRole === 'all' || user.role === selectedRole;
+      
+      return matchesSearch && matchesRole;
     });
+  }, [searchTerm, selectedRole, users]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * usersPerPage,
+    currentPage * usersPerPage
+  );
+
+  // Role icon mapping
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case 'Administrateur':
+        return <FiShield className="h-6 w-6 text-blue-600" />;
+      case 'Étudiant':
+        return <FiUser className="h-6 w-6 text-green-600" />;
+      case 'Professeur':
+        return <FiBook className="h-6 w-6 text-purple-600" />;
+      case 'Comptable':
+        return <FiDollarSign className="h-6 w-6 text-yellow-600" />;
+      default:
+        return <FiUser className="h-6 w-6 text-gray-600" />;
+    }
   };
 
+  // Handle new user form submission
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${BASEURL}/user-profile/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authentication headers if needed
+        },
+        body: JSON.stringify(newUser),
+      });
+      if (!response.ok) {
+        throw new Error('Erreur lors de la création de l\'utilisateur');
+      }
+      const createdUser = await response.json();
+      setUsers([...users, {
+        id: createdUser.id,
+        username: createdUser.username,
+        email: createdUser.email,
+        role: createdUser.is_superuser ? 'Administrateur' :
+              createdUser.isEtudiant ? 'Étudiant' :
+              createdUser.isProf ? 'Professeur' :
+              createdUser.isComptable ? 'Comptable' : 'Inconnu'
+      }]);
+      setIsModalOpen(false);
+      setNewUser({
+        username: '',
+        email: '',
+        is_superuser: false,
+        isEtudiant: false,
+        isProf: false,
+        isComptable: false,
+      });
+      Swal.fire({
+        icon: 'success',
+        title: 'Utilisateur crée avec succès',
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: err.message,
+      });
+    }
+  };
+
+  // Loading animation
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-4 flex justify-center items-center min-h-screen bg-gray-50">
+        <motion.div
+          className="relative flex flex-col items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.div
+            className="h-16 w-16 border-4 border-blue-500 border-t-transparent rounded-full"
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          />
+          <motion.div
+            className="absolute h-20 w-20 bg-blue-100 rounded-full"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+          />
+          <p className="mt-4 text-gray-600 font-medium">Chargement des utilisateurs...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-100 text-red-700 p-4 rounded-lg shadow-sm">
+          Erreur: {error}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
+    <div className="container mx-auto px-4">
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+        transition={{ duration: 0.5 }}
+        className="mb-6 flex flex-col sm:flex-row justify-between items-center"
       >
-        <h1 className="text-2xl font-bold text-gray-800">Gestion des Utilisateurs</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">Gestion des Utilisateurs</h1>
         <button
-          onClick={handleAddUser}
-          className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
         >
-          <FiPlus className="mr-2 inline-block" /> Nouvel Utilisateur
+          <FiPlus className="h-5 w-5" />
+          Nouvel Utilisateur
         </button>
       </motion.div>
 
-      {/* Filtres et Recherche */}
-      <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-md sm:flex-row">
+      {/* User Count Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+      >
+        {[
+          { role: 'Administrateur', count: userCounts.Administrateur, color: 'blue' },
+          { role: 'Étudiant', count: userCounts.Étudiant, color: 'green' },
+          { role: 'Professeur', count: userCounts.Professeur, color: 'purple' },
+          { role: 'Comptable', count: userCounts.Comptable, color: 'yellow' },
+        ].map(({ role, count, color }) => (
+          <div
+            key={role}
+            className={`bg-white p-4 rounded-xl shadow-sm border-l-4 border-${color}-500 flex items-center gap-4 hover:shadow-md transition-shadow`}
+          >
+            <div className={`p-2 bg-${color}-100 rounded-full`}>{getRoleIcon(role)}</div>
+            <div>
+              <p className="text-sm text-gray-600">{role}</p>
+              <p className="text-lg font-bold text-gray-800">{count}</p>
+            </div>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* Search and Filter */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="flex flex-col sm:flex-row gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm"
+      >
         <div className="relative flex-1">
-          <FiSearch className="absolute left-3 top-3 text-gray-400" />
+          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher un utilisateur..."
-            className="w-full rounded-lg border pl-10 pr-4 py-2"
+            placeholder="Rechercher par nom ou email..."
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <select
-          className="rounded-lg border px-4 py-2"
-          value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value)}
-        >
-          <option value="all">Tous les rôles</option>
-          <option value="admin">Administrateur</option>
-          <option value="secretary">Secrétaire</option>
-          <option value="manager">Gestionnaire</option>
-        </select>
-      </div>
+        <div className="flex items-center gap-2">
+          <FaFilter className="text-gray-500" />
+          <select
+            className="rounded-lg border border-gray-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+          >
+            <option value="all">Tous les rôles</option>
+            <option value="Administrateur">Administrateur</option>
+            <option value="Étudiant">Étudiant</option>
+            <option value="Professeur">Professeur</option>
+            <option value="Comptable">Comptable</option>
+          </select>
+        </div>
+      </motion.div>
 
-      {/* Tableau des utilisateurs */}
-      <div className="overflow-x-auto rounded-lg bg-white shadow-md">
-        <table className="w-full table-auto">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Utilisateur
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Rôle
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Statut
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Dernière Connexion
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {users.map((user) => (
-              <motion.tr
-                key={user.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="hover:bg-gray-50"
-              >
-                <td className="whitespace-nowrap px-6 py-4">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0">
-                      <div className="rounded-full bg-blue-100 p-2">
-                        <FiUser className="h-6 w-6 text-blue-600" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <div className="font-medium text-gray-900">{user.name}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4">{user.email}</td>
-                <td className="whitespace-nowrap px-6 py-4">
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-800">
-                    {user.role}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4">
-                  <span className={`rounded-full px-3 py-1 text-xs
-                    ${user.status === 'Actif' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'}`}
+      {/* Users Table */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="bg-white rounded-xl shadow-sm overflow-hidden"
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              <AnimatePresence>
+                {paginatedUsers.map((user) => (
+                  <motion.tr
+                    key={user.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="hover:bg-gray-50 transition-colors duration-200"
                   >
-                    {user.status}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                  {user.lastLogin}
-                </td>
-                <td className="whitespace-nowrap px-6 py-4">
-                  <div className="flex space-x-3">
-                    <button className="text-blue-600 hover:text-blue-900">
-                      <FiEdit2 className="h-5 w-5" />
-                    </button>
-                    <button className="text-red-600 hover:text-red-900">
-                      <FiTrash2 className="h-5 w-5" />
-                    </button>
-                  </div>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                          {getRoleIcon(user.role)}
+                        </div>
+                        <span className="font-medium text-gray-900">{user.username}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{user.email}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium
+                        ${user.role === 'Administrateur' ? 'bg-blue-100 text-blue-800' :
+                          user.role === 'Étudiant' ? 'bg-green-100 text-green-800' :
+                          user.role === 'Professeur' ? 'bg-purple-100 text-purple-800' :
+                          'bg-yellow-100 text-yellow-800'}`}>
+                        {user.role}
+                      </span>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between rounded-lg bg-white px-4 py-3 shadow-md">
-        <div className="flex items-center">
-          <span className="text-sm text-gray-700">
-            Affichage de 1 à 6 sur 20 utilisateurs
-          </span>
-        </div>
-        <div className="flex items-center space-x-2">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="mt-4 flex flex-col sm:flex-row items-center justify-between bg-white p-4 rounded-xl shadow-sm"
+      >
+        <span className="text-sm text-gray-600 mb-2 sm:mb-0">
+          Affichage de {((currentPage - 1) * usersPerPage) + 1} à{' '}
+          {Math.min(currentPage * usersPerPage, filteredUsers.length)} sur {filteredUsers.length} utilisateurs
+        </span>
+        <div className="flex gap-2">
           <button
-            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+            className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+            disabled={currentPage === 1}
           >
             Précédent
           </button>
           <button
-            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-            onClick={() => setCurrentPage(page => page + 1)}
+            className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
+            disabled={currentPage === totalPages}
           >
             Suivant
           </button>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Create User Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white rounded-xl p-6 w-full max-w-md"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">Nouvel Utilisateur</h2>
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                  <FiX className="h-6 w-6" />
+                </button>
+              </div>
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Nom d&apos;utilisateur</label>
+                  <input
+                    type="text"
+                    value={newUser.username}
+                    onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Rôle</label>
+                  <div className="mt-2 space-y-2">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={newUser.is_superuser}
+                        onChange={(e) => setNewUser({ ...newUser, is_superuser: e.target.checked })}
+                        className="h-4 w-4 text-blue-500 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Administrateur</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={newUser.isEtudiant}
+                        onChange={(e) => setNewUser({ ...newUser, isEtudiant: e.target.checked })}
+                        className="h-4 w-4 text-blue-500 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Étudiant</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={newUser.isProf}
+                        onChange={(e) => setNewUser({ ...newUser, isProf: e.target.checked })}
+                        className="h-4 w-4 text-blue-500 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Professeur</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={newUser.isComptable}
+                        onChange={(e) => setNewUser({ ...newUser, isComptable: e.target.checked })}
+                        className="h-4 w-4 text-blue-500 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Comptable</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+                  >
+                    Créer
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiEdit2, FiTrash2, FiPlus, FiBook, FiClock, FiUsers } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlus, FiBook, FiClock } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
 const Courses = () => {
