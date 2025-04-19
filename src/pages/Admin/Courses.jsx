@@ -1,193 +1,278 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiEdit2, FiTrash2, FiPlus, FiBook, FiClock } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlus, FiSearch } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
 const Courses = () => {
+  const [parcours, setParcours] = useState([]);
+  const [mentions, setMentions] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedMention, setSelectedMention] = useState('all');
-  const [selectedLevel, setSelectedLevel] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  // Données factices pour la démonstration
-  const courses = [
-    {
-      id: 1,
-      name: "Développement Web",
-      mention: "Informatique",
-      level: "L2",
-      description: "Formation aux technologies web modernes",
-      credits: 6,
-      hours: 60,
-      professors: ["Dr. Martin", "Dr. Dupont"],
-      prerequisites: ["Algorithmes", "Programmation"],
-      type: "Obligatoire"
-    },
-    {
-      id: 2,
-      name: "Base de données avancées",
-      mention: "Informatique",
-      level: "L3",
-      description: "Conception et optimisation des bases de données",
-      credits: 4,
-      hours: 40,
-      professors: ["Dr. Robert"],
-      prerequisites: ["Base de données"],
-      type: "Obligatoire"
-    },
-    // ... autres parcours
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [parcoursRes, mentionsRes] = await Promise.all([
+          fetch('http://localhost:8000/api/parcours/'),
+          fetch('http://localhost:8000/api/mentions/')
+        ]);
+        
+        const parcoursData = await parcoursRes.json();
+        const mentionsData = await mentionsRes.json();
+        
+        setParcours(parcoursData);
+        setMentions(mentionsData);
+      } catch (error) {
+        Swal.fire('Erreur', 'Impossible de charger les données', 'error');
+      }
+    };
+    
+    fetchData();
+  }, []);
 
-  const handleAddCourse = () => {
-    Swal.fire({
+  const filteredParcours = parcours.filter(p => {
+    const searchMatch = p.nom_parcours.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       p.mention_nom.toLowerCase().includes(searchTerm.toLowerCase());
+    const mentionMatch = selectedMention === 'all' || p.mention.toString() === selectedMention;
+    return searchMatch && mentionMatch;
+  });
+
+  // Calcul de la pagination
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredParcours.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredParcours.length / itemsPerPage);
+
+  const handleAddParcours = async () => {
+    const { value: formValues } = await Swal.fire({
       title: 'Ajouter un Parcours',
       html: `
         <div class="space-y-4">
-          <input id="name" class="swal2-input" placeholder="Nom du parcours">
+          <input id="nom" class="swal2-input" placeholder="Nom du parcours">
           <select id="mention" class="swal2-input">
             <option value="">Sélectionner une mention</option>
-            <option value="info">Informatique</option>
-            <option value="gestion">Gestion</option>
+            ${mentions.map(m => 
+              `<option value="${m.id}">${m.nom_mention}</option>`
+            ).join('')}
           </select>
-          <select id="level" class="swal2-input">
-            <option value="">Sélectionner un niveau</option>
-            <option value="L1">L1</option>
-            <option value="L2">L2</option>
-            <option value="L3">L3</option>
-            <option value="M1">M1</option>
-            <option value="M2">M2</option>
-          </select>
-          <textarea id="description" class="swal2-textarea" placeholder="Description"></textarea>
-          <input id="credits" class="swal2-input" type="number" placeholder="Nombre de crédits">
-          <input id="hours" class="swal2-input" type="number" placeholder="Nombre d'heures">
         </div>
       `,
-      showCancelButton: true,
-      confirmButtonText: 'Ajouter',
-      cancelButtonText: 'Annuler',
-      preConfirm: () => {
-        // Logique d'ajout du parcours
-      }
+      preConfirm: () => ({
+        nom_parcours: document.getElementById('nom').value,
+        mention: document.getElementById('mention').value
+      }),
+      validation: (values) => !values.nom_parcours || !values.mention ? 'Champs requis' : null
     });
+
+    if (formValues) {
+      try {
+        const response = await fetch('http://localhost:8000/api/parcours/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formValues)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.detail || JSON.stringify(data));
+        }
+
+        setParcours([...parcours, data]);
+        Swal.fire('Succès!', 'Parcours ajouté', 'success');
+      } catch (error) {
+        Swal.fire('Erreur', error.message.replace(/["{}]/g, ''), 'error');
+      }
+    }
+  };
+
+  const handleEditParcours = async (selectedParcours) => {
+    const { value: formValues } = await Swal.fire({
+      title: 'Modifier le Parcours',
+      html: `
+        <div class="space-y-4">
+          <input id="nom" class="swal2-input" value="${selectedParcours.nom_parcours}">
+          <select id="mention" class="swal2-input">
+            ${mentions.map(m => 
+              `<option value="${m.id}" ${m.id === parcours.mention ? 'selected' : ''}>${m.nom_mention}</option>`
+            ).join('')}
+          </select>
+        </div>
+      `,
+      preConfirm: () => ({
+        nom_parcours: document.getElementById('nom').value,
+        mention: document.getElementById('mention').value
+      })
+    });
+
+      if (formValues) {
+        try {
+          const response = await fetch(`http://localhost:8000/api/parcours/${selectedParcours.id}/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formValues)
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.detail || JSON.stringify(data));
+          }
+    
+          // Correction ici : utiliser le nom correct de la variable d'état
+          setParcours(prevParcours => 
+            prevParcours.map(p => p.id === data.id ? data : p)
+          );
+          
+          Swal.fire('Succès!', 'Modifications enregistrées', 'success');
+        } catch (error) {
+          Swal.fire('Erreur', error.message.replace(/["{}]/g, ''), 'error');
+        }
+      }
+    };
+
+  const handleDeleteParcours = async (id) => {
+    const confirmation = await Swal.fire({
+      title: 'Confirmer la suppression?',
+      text: "Cette action est irréversible!",
+      icon: 'warning',
+      showCancelButton: true
+    });
+
+    if (confirmation.isConfirmed) {
+      try {
+        const response = await fetch(`http://localhost:8000/api/parcours/${id}/`, { 
+          method: 'DELETE' 
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || JSON.stringify(errorData));
+        }
+
+        setParcours(parcours.filter(p => p.id !== id));
+        Swal.fire('Supprimé!', 'Parcours supprimé', 'success');
+      } catch (error) {
+        Swal.fire('Erreur', error.message.replace(/["{}]/g, ''), 'error');
+      }
+    }
   };
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
+    <div className="p-4 bg-gray-50 min-h-screen">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+        className="flex flex-col sm:flex-row justify-between items-center mb-4"
       >
-        <h1 className="text-2xl font-bold text-gray-800">Gestion des Parcours</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-4 sm:mb-0">Gestion des Parcours</h1>
         <button
-          onClick={handleAddCourse}
-          className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+          onClick={handleAddParcours}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
         >
-          <FiPlus className="mr-2 inline-block" /> Nouveau Parcours
+          <FiPlus className="mr-2" /> Nouveau Parcours
         </button>
       </motion.div>
 
-      {/* Filtres */}
-      <div className="flex flex-wrap gap-4 rounded-lg bg-white p-4 shadow-md">
-        <select
-          className="rounded-lg border px-4 py-2"
-          value={selectedMention}
-          onChange={(e) => setSelectedMention(e.target.value)}
-        >
-          <option value="all">Toutes les mentions</option>
-          <option value="info">Informatique</option>
-          <option value="gestion">Gestion</option>
-        </select>
-        <select
-          className="rounded-lg border px-4 py-2"
-          value={selectedLevel}
-          onChange={(e) => setSelectedLevel(e.target.value)}
-        >
-          <option value="all">Tous les niveaux</option>
-          <option value="L1">L1</option>
-          <option value="L2">L2</option>
-          <option value="L3">L3</option>
-          <option value="M1">M1</option>
-          <option value="M2">M2</option>
-        </select>
+      <div className="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <FiSearch className="absolute top-3 left-3 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Rechercher un parcours..."
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            className="w-full px-4 py-2 border rounded-lg bg-white"
+            value={selectedMention}
+            onChange={(e) => setSelectedMention(e.target.value)}
+          >
+            <option value="all">Toutes les mentions</option>
+            {mentions.map(mention => (
+              <option key={mention.id} value={mention.id}>
+                {mention.nom_mention}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Grille des parcours */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {courses.map((course) => (
-          <motion.div
-            key={course.id}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="rounded-lg bg-white p-6 shadow-lg hover:shadow-xl transition-shadow"
-          >
-            <div className="flex justify-between">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-800">{course.name}</h3>
-                <p className="text-sm text-gray-500">{course.mention} - {course.level}</p>
-              </div>
-              <div className="flex space-x-2">
-                <button className="text-blue-600 hover:text-blue-900">
-                  <FiEdit2 className="h-5 w-5" />
-                </button>
-                <button className="text-red-600 hover:text-red-900">
-                  <FiTrash2 className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
-            <p className="mt-3 text-gray-600">{course.description}</p>
-
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="flex items-center text-gray-600">
-                <FiBook className="mr-2" />
-                <span>{course.credits} crédits</span>
-              </div>
-              <div className="flex items-center text-gray-600">
-                <FiClock className="mr-2" />
-                <span>{course.hours}h</span>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <h4 className="font-medium text-gray-700">Professeurs:</h4>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {course.professors.map((prof, index) => (
-                  <span
-                    key={index}
-                    className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800"
-                  >
-                    {prof}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <h4 className="font-medium text-gray-700">Prérequis:</h4>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {course.prerequisites.map((prereq, index) => (
-                  <span
-                    key={index}
-                    className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-800"
-                  >
-                    {prereq}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <span className={`rounded-full px-3 py-1 text-sm
-                ${course.type === 'Obligatoire' 
-                  ? 'bg-red-100 text-red-800' 
-                  : 'bg-green-100 text-green-800'
-                }`}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-white rounded-xl shadow-sm overflow-hidden"
+      >
+        <table className="w-full">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nom</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Mention</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {currentItems.map(parcours => (
+              <motion.tr
+                key={parcours.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                whileHover={{ backgroundColor: '#f8fafc' }}
+                className="transition-colors"
               >
-                {course.type}
-              </span>
-            </div>
-          </motion.div>
-        ))}
+                <td className="px-6 py-4 font-medium text-gray-900">{parcours.nom_parcours}</td>
+                <td className="px-6 py-4 text-gray-600">{parcours.mention_nom}</td>
+                <td className="px-6 py-4 space-x-3">
+                  <button
+                    onClick={() => handleEditParcours(parcours)}
+                    className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50"
+                  >
+                    <FiEdit2 className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteParcours(parcours.id)}
+                    className="text-red-600 hover:text-red-800 p-2 rounded-lg hover:bg-red-50"
+                  >
+                    <FiTrash2 className="w-5 h-5" />
+                  </button>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </motion.div>
+
+      <div className="mt-6 bg-white p-4 rounded-xl shadow-sm">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">
+            Affichage de {startIndex + 1} à {Math.min(endIndex, filteredParcours.length)} sur {filteredParcours.length}
+          </span>
+          <div className="space-x-2">
+            <button
+              className={`px-4 py-2 text-sm bg-gray-100 rounded-lg ${
+                currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'
+              }`}
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              Précédent
+            </button>
+            <button
+              className={`px-4 py-2 text-sm bg-gray-100 rounded-lg ${
+                currentPage >= totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'
+              }`}
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+            >
+              Suivant
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
