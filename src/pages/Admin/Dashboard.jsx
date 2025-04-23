@@ -1,29 +1,35 @@
 import { motion } from 'framer-motion';
-import { Line, Doughnut } from 'react-chartjs-2';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  Title,
+  BarElement,
   ArcElement,
+  Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { 
-  FiUsers, 
-  FiUserCheck, 
-  FiDollarSign, 
-  FiBookOpen 
-} from 'react-icons/fi';
+import {
+  FaUsers,
+  FaChalkboardTeacher,
+  FaUserGraduate,
+  FaCodeBranch,
+  FaArchive,
+  FaLayerGroup,
+  FaBook,
+} from 'react-icons/fa';
+import { useState, useEffect } from 'react';
 
-// Enregistrement des composants Chart.js nécessaires
+// Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   ArcElement,
   Title,
   Tooltip,
@@ -31,132 +37,259 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
-  // Données factices pour la démonstration
-  const statsCards = [
-    { title: 'Étudiants Total', value: '1,234', icon: FiUsers, color: 'bg-blue-500' },
-    { title: 'Professeurs', value: '56', icon: FiUserCheck, color: 'bg-green-500' },
-    { title: 'Revenus Mensuel', value: '₣ 450,000', icon: FiDollarSign, color: 'bg-yellow-500' },
-    { title: 'Cours Actifs', value: '24', icon: FiBookOpen, color: 'bg-purple-500' },
-  ];
+  const [statsData, setStatsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const lineChartData = {
-    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'],
-    datasets: [{
-      label: 'Inscriptions 2024',
-      data: [65, 78, 90, 85, 95, 100],
-      borderColor: 'rgb(75, 192, 192)',
-      tension: 0.1
-    }]
-  };
+  useEffect(() => {
+    const fetchStats = async () => {
 
-  const doughnutData = {
-    labels: ['L1', 'L2', 'L3', 'M1', 'M2'],
-    datasets: [{
-      data: [300, 250, 200, 150, 100],
-      backgroundColor: [
-        '#FF6384',
-        '#36A2EB',
-        '#FFCE56',
-        '#4BC0C0',
-        '#9966FF'
+      try {
+        const response = await fetch('http://localhost:8000/api/stats/');
+        if (!response.ok) {
+          throw new Error('Failed to fetch stats');
+        }
+        const data = await response.json();
+        setStatsData(data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  // Stats cards configuration with updated icons
+  const statsCards = statsData
+    ? [
+        { title: 'Étudiants', value: statsData.total_utilisateurs, icon: FaUsers, color: 'bg-blue-600' },
+        { title: 'Professeurs', value: statsData.total_professeurs, icon: FaChalkboardTeacher, color: 'bg-green-600' },
+        { title: 'Utilisateurs', value: statsData.total_etudiants, icon: FaUserGraduate, color: 'bg-red-600' },
+        { title: 'Mentions', value: statsData.total_mentions, icon: FaCodeBranch, color: 'bg-yellow-600' },
+        { title: 'Parcours', value: statsData.total_parcours, icon: FaArchive, color: 'bg-teal-600' },
+        { title: 'Niveaux', value: statsData.total_niveaux, icon: FaLayerGroup, color: 'bg-orange-600' },
+        { title: 'Cours Actifs', value: statsData.total_matieres, icon: FaBook, color: 'bg-purple-600' },
       ]
-    }]
-  };
+    : [];
+
+  // Bar chart data
+  const barChartData = statsData
+    ? {
+        labels: statsData.etudiants_par_mention.map((item) => item.mention),
+        datasets: [
+          {
+            label: 'Étudiants par Mention',
+            data: statsData.etudiants_par_mention.map((item) => item.total_etudiants),
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+            borderColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+            borderWidth: 1,
+          },
+        ],
+      }
+    : { labels: [], datasets: [] };
+
+  // Doughnut chart data
+  const doughnutData = statsData
+    ? {
+        labels: statsData.etudiants_par_niveau.map((item) => item.niveau),
+        datasets: [
+          {
+            data: statsData.etudiants_par_niveau.map((item) => item.total_etudiants),
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+          },
+        ],
+      }
+    : { labels: [], datasets: [{ data: [], backgroundColor: [] }] };
+
+  // Tuition fees table data
+  const tuitionTableData = statsData
+    ? statsData.frais_scolarite_payes.par_niveau.map((niveau) => ({
+        niveau: niveau.niveau,
+        etudiants_ayant_paye: niveau.etudiants_ayant_paye,
+        details: niveau.par_designation.reduce(
+          (acc, curr) => ({
+            ...acc,
+            [curr.designation]: curr.etudiants_ayant_paye,
+          }),
+          {}
+        ),
+      }))
+    : [];
+
+  // Skeleton loader
+  const SkeletonLoader = () => (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-8 w-48 bg-gray-200 rounded"></div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[...Array(7)].map((_, i) => (
+          <div key={i} className="rounded-lg bg-gray-200 p-4 h-20"></div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-lg bg-gray-200 p-4 h-48"></div>
+        <div className="rounded-lg bg-gray-200 p-4 h-48"></div>
+      </div>
+      <div className="rounded-lg bg-gray-200 p-4 h-48"></div>
+    </div>
+  );
+
+  if (loading) {
+    return <div className="p-4 md:p-6"><SkeletonLoader /></div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-6 text-red-500 flex items-center justify-center">
+        <FaBook className="mr-2" /> Erreur : {error}
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Titre de la page avec animation */}
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-2xl font-bold text-gray-800"
-      >
-        Tableau de Bord
-      </motion.h1>
+    <div className="space-y-6 p-4 md:p-6 bg-gray-50 min-h-screen">
 
-      {/* Cartes de statistiques */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Stats cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statsCards.map((card, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="rounded-lg bg-white p-6 shadow-lg hover:shadow-xl transition-shadow"
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+            whileHover={{ scale: 1.05, boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}
+            className="rounded-xl bg-white p-4 shadow-md hover:shadow-lg transition-all duration-300"
           >
             <div className="flex items-center">
-              <div className={`rounded-full ${card.color} p-3`}>
-                <card.icon className="h-6 w-6 text-white" />
+              <div className={`rounded-full ${card.color} p-2.5`}>
+                <card.icon className="h-5 w-5 text-white" />
               </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">{card.title}</h3>
-                <p className="text-xl font-semibold text-gray-900">{card.value}</p>
+              <div className="ml-3">
+                <h3 className="text-xs md:text-sm font-medium text-gray-500">{card.title}</h3>
+                <p className="text-lg md:text-xl font-semibold text-gray-900">{card.value}</p>
               </div>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Graphiques */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Graphique des inscriptions */}
+      {/* Charts and Table */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Bar chart */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="rounded-lg bg-white p-6 shadow-lg"
+          transition={{ duration: 0.5 }}
+          whileHover={{ boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}
+          className="rounded-xl bg-white p-4 shadow-md transition-all duration-300"
         >
-          <h3 className="mb-4 text-lg font-semibold text-gray-800">
-            Évolution des Inscriptions
+          <h3 className="mb-3 text-base md:text-lg font-semibold text-gray-800">
+            Étudiants par Mention
           </h3>
-          <Line data={lineChartData} options={{
-            responsive: true,
-            plugins: {
-              legend: { position: 'bottom' }
-            }
-          }} />
+          <div className="h-64 md:h-72">
+            <Bar
+              data={barChartData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { position: 'bottom' },
+                  tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    cornerRadius: 8,
+                  },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Nombre d\'Étudiants' },
+                  },
+                  x: {
+                    title: { display: true, text: 'Mention' },
+                  },
+                },
+              }}
+            />
+          </div>
         </motion.div>
 
-        {/* Répartition des étudiants */}
+        {/* Doughnut chart */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="rounded-lg bg-white p-6 shadow-lg"
+          transition={{ duration: 0.5 }}
+          whileHover={{ boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}
+          className="rounded-xl bg-white p-4 shadow-md transition-all duration-300"
         >
-          <h3 className="mb-4 text-lg font-semibold text-gray-800">
+          <h3 className="mb-3 text-base md:text-lg font-semibold text-gray-800">
             Répartition par Niveau
           </h3>
-          <Doughnut data={doughnutData} options={{
-            responsive: true,
-            plugins: {
-              legend: { position: 'bottom' }
-            }
-          }} />
+          <div className="h-64 md:h-72">
+            <Doughnut
+              data={doughnutData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { position: 'bottom' },
+                  tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    cornerRadius: 8,
+                  },
+                },
+              }}
+            />
+          </div>
+        </motion.div>
+
+        {/* Tuition fees table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-xl bg-white p-4 shadow-md lg:col-span-2"
+        >
+          <h3 className="mb-3 text-base md:text-lg font-semibold text-gray-800">
+            Frais de Scolarité Payés par Niveau
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  {['Niveau', 'Étudiants Ayant Payé', 'Tranche 1', 'Tranche 2', 'Tranche 3', 'Inscription', 'Réinscription', 'Autres'].map((header, index) => (
+                    <th
+                      key={index}
+                      className="px-4 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {tuitionTableData.map((row, index) => (
+                  <motion.tr
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={`hover:bg-blue-50 transition-colors duration-200 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
+                  >
+                    <td className="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm font-medium text-gray-900">{row.niveau}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-blue-600 font-semibold">{row.etudiants_ayant_paye}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-green-600">{row.details['Tranche 1'] || 0}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-yellow-600">{row.details['Tranche 2'] || 0}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-red-600">{row.details['Tranche 3'] || 0}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-purple-600">{row.details['Inscription'] || 0}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-teal-600">{row.details['Réinscription'] || 0}</td>
+                    <td className="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-gray-600">{row.details['Autres'] || 0}</td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </motion.div>
       </div>
-
-      {/* Activités Récentes */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-lg bg-white p-6 shadow-lg"
-      >
-        <h3 className="mb-4 text-lg font-semibold text-gray-800">
-          Activités Récentes
-        </h3>
-        <div className="space-y-4">
-          {[1, 2, 3].map((_, index) => (
-            <div key={index} className="flex items-center border-b border-gray-200 pb-4 last:border-0">
-              <div className="h-2 w-2 rounded-full bg-green-500"></div>
-              <div className="ml-3">
-                <p className="text-sm text-gray-600">
-                  Nouvel étudiant inscrit en L1 Informatique
-                </p>
-                <p className="text-xs text-gray-400">Il y a 2 heures</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
     </div>
   );
 };
