@@ -73,18 +73,22 @@ const Fees = () => {
     fetchData();
   }, []);
 
-  // Mettre à jour le montant payé automatiquement lorsque la désignation change
-  useEffect(() => {
-    if (formData.designation && formData.etudiant) {
-      const selectedStudent = students.find((s) => s.id === parseInt(formData.etudiant));
-      const selectedTarif = tarifs.find(
-        (t) => t.designation === formData.designation && t.niveau === selectedStudent?.niveau
-      );
-      if (selectedTarif) {
-        setFormData((prev) => ({ ...prev, montant_paye: selectedTarif.montant }));
-      }
+// Mettre à jour le montant payé automatiquement lorsque la désignation ou l'étudiant change
+useEffect(() => {
+  if (formData.etudiant && formData.designation) {
+    const selectedStudent = students.find((s) => s.id === parseInt(formData.etudiant));
+    const selectedTarif = tarifs.find(
+      (t) => t.id === parseInt(formData.designation) && t.niveau === selectedStudent?.niveau
+    );
+    if (selectedTarif) {
+      setFormData((prev) => ({ ...prev, montant_paye: selectedTarif.montant }));
+    } else {
+      setFormData((prev) => ({ ...prev, montant_paye: '' })); // Réinitialiser si aucun tarif correspondant
     }
-  }, [formData.designation, formData.etudiant, tarifs, students]);
+  } else {
+    setFormData((prev) => ({ ...prev, montant_paye: '' })); // Réinitialiser si étudiant ou désignation non sélectionnés
+  }
+}, [formData.designation, formData.etudiant, students, tarifs]);
 
   // Fonction pour associer les données des étudiants aux frais
   const enrichedFees = fees.map((fee) => {
@@ -177,10 +181,11 @@ const Fees = () => {
         ...formData,
         montant_paye: parseFloat(formData.montant_paye),
         annee_academique: parseInt(formData.annee_academique),
-        designation: parseInt(formData.designation),
-      };
+        designation: formData.designation ? parseInt(formData.designation) : null,
+      };      
       if (modalMode === 'create') {
         await axios.post(feesUrl, payload);
+        
         const response = await axios.get(feesUrl);
         setFees(response.data);
         Swal.fire({
@@ -384,7 +389,7 @@ const Fees = () => {
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">{fee.level}</td>
                     <td className="whitespace-nowrap px-6 py-4">{fee.designation_nom}</td>
-                    <td className="whitespace-nowrap px-6 py-4">₣ {parseFloat(fee.montant_paye).toLocaleString()}</td>
+                    <td className="whitespace-nowrap px-6 py-4">{parseFloat(fee.montant_paye).toLocaleString()} Ar</td>
                     <td className="whitespace-nowrap px-6 py-4">{new Date(fee.date_de_paiement).toLocaleDateString()}</td>
                     <td className="whitespace-nowrap px-6 py-4">{fee.academicYear}</td>
                     <td className="whitespace-nowrap px-6 py-4">{fee.methode_paiement}</td>
@@ -488,7 +493,7 @@ const Fees = () => {
                 >
                   <option value="">Sélectionner une désignation</option>
                   {getAvailableDesignations().map((tarif) => (
-                    <option key={tarif.id} value={tarif.designation}>
+                    <option key={tarif.id} value={tarif.id}>
                       {tarif.designation}
                     </option>
                   ))}
@@ -500,7 +505,6 @@ const Fees = () => {
                   type="number"
                   name="montant_paye"
                   value={formData.montant_paye}
-                  onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                   required
                   readOnly
