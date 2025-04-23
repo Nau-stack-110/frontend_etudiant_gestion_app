@@ -1,54 +1,144 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  FiUser, FiLock, FiBell, 
-  FiMonitor, FiSave, FiCalendar, FiDollarSign 
+  FiUser, FiLock, FiSave, FiCalendar, FiDollarSign, FiChevronDown, FiChevronUp 
 } from 'react-icons/fi';
+import axios from 'axios';
+import Swal from 'sweetalert2';
+
+// Composant Skeleton pour la section Frais Scolarité
+const FeesSkeleton = () => (
+  <div className="space-y-6 animate-pulse">
+    {Array.from({ length: 3 }).map((_, index) => (
+      <div key={index} className="rounded-lg border border-gray-200 p-6">
+        <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i}>
+              <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+              <div className="h-10 bg-gray-200 rounded w-full"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general');
-  const [notifications, setNotifications] = useState({
-    email: true,
-    system: true,
-    security: true
-  });
-
-  const [theme, setTheme] = useState('light');
-  const [language, setLanguage] = useState('fr');
-
   const [academicYear, setAcademicYear] = useState({
     current: '2023-2024',
     start: '2023-09-01',
     end: '2024-06-30'
   });
+  const [levels, setLevels] = useState([]);
+  const [tarifs, setTarifs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [openLevels, setOpenLevels] = useState({}); 
 
-  const [fees, setFees] = useState({
-    L1: 1500000,
-    L2: 1500000,
-    L3: 1500000,
-    M1: 1800000,
-    M2: 1800000
-  });
+  // URLs des APIs
+  const apiBaseUrl = 'http://localhost:8000/api';
+  const levelsUrl = `${apiBaseUrl}/niveau/`;
+  const tarifsUrl = `${apiBaseUrl}/tarifs/`;
 
-  const handleSaveSettings = () => {
-    // Logique de sauvegarde des paramètres
+  // Récupération des données
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [levelsResponse, tarifsResponse] = await Promise.all([
+          axios.get(levelsUrl),
+          axios.get(tarifsUrl)
+        ]);
+        setLevels(levelsResponse.data);
+        setTarifs(tarifsResponse.data);
+        // Initialiser les sections pliables (toutes fermées par défaut)
+        setOpenLevels(
+          levelsResponse.data.reduce((acc, level) => ({
+            ...acc,
+            [level.id]: false
+          }), {})
+        );
+      } catch (err) {
+        setError('Erreur lors du chargement des données', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Erreur lors du chargement des niveaux ou tarifs'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Grouper les tarifs par niveau
+  const groupedTarifs = levels.map(level => ({
+    ...level,
+    tarifs: tarifs.filter(tarif => tarif.niveau === level.id)
+  }));
+
+  // Gérer l'ouverture/fermeture des sections
+  const toggleLevel = (levelId) => {
+    setOpenLevels(prev => ({
+      ...prev,
+      [levelId]: !prev[levelId]
+    }));
+  };
+
+  // Mettre à jour un tarif
+  const handleTarifChange = (tarifId, newMontant) => {
+    setTarifs(prev =>
+      prev.map(tarif =>
+        tarif.id === tarifId ? { ...tarif, montant: newMontant } : tarif
+      )
+    );
+  };
+
+  // Sauvegarder les modifications
+  const handleSaveSettings = async () => {
+    try {
+      // Sauvegarder chaque tarif modifié
+      const updatePromises = tarifs.map(tarif =>
+        axios.put(`${tarifsUrl}${tarif.id}/`, {
+          ...tarif,
+          montant: parseFloat(tarif.montant)
+        })
+      );
+      await Promise.all(updatePromises);
+      Swal.fire({
+        icon: 'success',
+        title: 'Succès',
+        text: 'Paramètres enregistrés avec succès',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      setError('Erreur lors de la sauvegarde des paramètres', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: 'Erreur lors de la sauvegarde des paramètres'
+      });
+    }
   };
 
   const tabs = [
     { id: 'general', label: 'Général', icon: FiUser },
     { id: 'academic', label: 'Année Académique', icon: FiCalendar },
     { id: 'fees', label: 'Frais Scolarité', icon: FiDollarSign },
-    { id: 'notifications', label: 'Notifications', icon: FiBell },
     { id: 'security', label: 'Sécurité', icon: FiLock },
-    { id: 'appearance', label: 'Apparence', icon: FiMonitor }
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-2xl font-bold text-gray-800"
+        className="text-xl font-bold text-gray-800"
       >
         Paramètres
       </motion.h1>
@@ -73,6 +163,12 @@ const Settings = () => {
 
       {/* Contenu des onglets */}
       <div className="rounded-lg bg-white p-6 shadow-lg">
+        {error && (
+          <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
+
         {/* Paramètres généraux */}
         {activeTab === 'general' && (
           <motion.div
@@ -87,7 +183,7 @@ const Settings = () => {
                 </label>
                 <input
                   type="text"
-                  className="mt-1 block w-full rounded-lg border p-2"
+                  className="mt-1 block w-full rounded-lg border p-2 text-sm"
                   defaultValue="John Doe"
                 />
               </div>
@@ -97,7 +193,7 @@ const Settings = () => {
                 </label>
                 <input
                   type="email"
-                  className="mt-1 block w-full rounded-lg border p-2"
+                  className="mt-1 block w-full rounded-lg border p-2 text-sm"
                   defaultValue="john.doe@univ.mg"
                 />
               </div>
@@ -105,7 +201,7 @@ const Settings = () => {
           </motion.div>
         )}
 
-        {/* Nouveau contenu pour l'onglet Année Académique */}
+        {/* Année Académique */}
         {activeTab === 'academic' && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -121,7 +217,7 @@ const Settings = () => {
                   </label>
                   <input
                     type="text"
-                    className="mt-1 block w-full rounded-lg border p-2"
+                    className="mt-1 block w-full rounded-lg border p-2 text-sm"
                     value={academicYear.current}
                     onChange={(e) => setAcademicYear(prev => ({
                       ...prev,
@@ -135,7 +231,7 @@ const Settings = () => {
                   </label>
                   <input
                     type="date"
-                    className="mt-1 block w-full rounded-lg border p-2"
+                    className="mt-1 block w-full rounded-lg border p-2 text-sm"
                     value={academicYear.start}
                     onChange={(e) => setAcademicYear(prev => ({
                       ...prev,
@@ -149,7 +245,7 @@ const Settings = () => {
                   </label>
                   <input
                     type="date"
-                    className="mt-1 block w-full rounded-lg border p-2"
+                    className="mt-1 block w-full rounded-lg border p-2 text-sm"
                     value={academicYear.end}
                     onChange={(e) => setAcademicYear(prev => ({
                       ...prev,
@@ -162,147 +258,68 @@ const Settings = () => {
           </motion.div>
         )}
 
-        {/* Nouveau contenu pour l'onglet Frais Scolarité */}
+        {/* Frais Scolarité */}
         {activeTab === 'fees' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="space-y-6"
           >
-            <div className="rounded-lg border border-gray-200 p-6">
-              <h3 className="mb-4 text-lg font-medium">Frais de Scolarité par Niveau</h3>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {Object.entries(fees).map(([level, amount]) => (
-                  <div key={level}>
-                    <label className="block text-sm font-medium text-gray-700">
-                      {level}
-                    </label>
-                    <div className="mt-1 flex rounded-md shadow-sm">
-                      <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500">
-                        Ar
-                      </span>
-                      <input
-                        type="number"
-                        className="block w-full rounded-none rounded-r-md border p-2"
-                        value={amount}
-                        onChange={(e) => setFees(prev => ({
-                          ...prev,
-                          [level]: parseInt(e.target.value)
-                        }))}
-                      />
+            {loading ? (
+              <FeesSkeleton />
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {groupedTarifs.map((level) => (
+                    <div key={level.id} className="rounded-lg border border-gray-200">
+                      <button
+                        onClick={() => toggleLevel(level.id)}
+                        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100"
+                      >
+                        <h3 className="text-lg font-medium">{level.nom}</h3>
+                        {openLevels[level.id] ? (
+                          <FiChevronUp className="h-5 w-5 text-gray-500" />
+                        ) : (
+                          <FiChevronDown className="h-5 w-5 text-gray-500" />
+                        )}
+                      </button>
+                      <AnimatePresence>
+                        {openLevels[level.id] && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="p-6"
+                          >
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                              {level.tarifs.map((tarif) => (
+                                <div key={tarif.id}>
+                                  <label className="block text-sm font-medium text-gray-700">
+                                    {tarif.designation}
+                                  </label>
+                                  <div className="mt-1 flex rounded-md shadow-sm">
+                                    <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 text-sm">
+                                      Ar
+                                    </span>
+                                    <input
+                                      type="number"
+                                      className="block w-full rounded-none rounded-r-md border p-2 text-sm"
+                                      value={tarif.montant}
+                                      onChange={(e) => handleTarifChange(tarif.id, e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
 
-            <div className="rounded-lg border border-gray-200 p-6">
-              <h3 className="mb-4 text-lg font-medium">Configuration des Tranches</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Paiement en 3 tranches</h4>
-                    <p className="text-sm text-gray-500">
-                      Permettre le paiement en plusieurs fois
-                    </p>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      className="peer sr-only"
-                      defaultChecked
-                    />
-                    <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                  </label>
-                </div>
-                
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      1ère Tranche (%)
-                    </label>
-                    <input
-                      type="number"
-                      className="mt-1 block w-full rounded-lg border p-2"
-                      defaultValue="40"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      2ème Tranche (%)
-                    </label>
-                    <input
-                      type="number"
-                      className="mt-1 block w-full rounded-lg border p-2"
-                      defaultValue="30"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      3ème Tranche (%)
-                    </label>
-                    <input
-                      type="number"
-                      className="mt-1 block w-full rounded-lg border p-2"
-                      defaultValue="30"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Notifications */}
-        {activeTab === 'notifications' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-6"
-          >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Notifications par email</h3>
-                  <p className="text-sm text-gray-500">
-                    Recevoir des notifications par email
-                  </p>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={notifications.email}
-                    onChange={() => setNotifications(prev => ({
-                      ...prev,
-                      email: !prev.email
-                    }))}
-                    className="peer sr-only"
-                  />
-                  <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Notifications système</h3>
-                  <p className="text-sm text-gray-500">
-                    Recevoir des notifications dans l&apos;application
-                  </p>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={notifications.system}
-                    onChange={() => setNotifications(prev => ({
-                      ...prev,
-                      system: !prev.system
-                    }))}
-                    className="peer sr-only"
-                  />
-                  <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300"></div>
-                </label>
-              </div>
-            </div>
+              </>
+            )}
           </motion.div>
         )}
 
@@ -320,7 +337,7 @@ const Settings = () => {
                 </label>
                 <input
                   type="password"
-                  className="mt-1 block w-full rounded-lg border p-2"
+                  className="mt-1 block w-full rounded-lg border p-2 text-sm"
                 />
               </div>
               <div>
@@ -329,7 +346,7 @@ const Settings = () => {
                 </label>
                 <input
                   type="password"
-                  className="mt-1 block w-full rounded-lg border p-2"
+                  className="mt-1 block w-full rounded-lg border p-2 text-sm"
                 />
               </div>
               <div>
@@ -338,48 +355,8 @@ const Settings = () => {
                 </label>
                 <input
                   type="password"
-                  className="mt-1 block w-full rounded-lg border p-2"
+                  className="mt-1 block w-full rounded-lg border p-2 text-sm"
                 />
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Apparence */}
-        {activeTab === 'appearance' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-6"
-          >
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Thème
-                </label>
-                <select
-                  className="mt-1 block w-full rounded-lg border p-2"
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
-                >
-                  <option value="light">Clair</option>
-                  <option value="dark">Sombre</option>
-                  <option value="system">Système</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Langue
-                </label>
-                <select
-                  className="mt-1 block w-full rounded-lg border p-2"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                >
-                  <option value="fr">Français</option>
-                  <option value="en">English</option>
-                  <option value="mg">Malagasy</option>
-                </select>
               </div>
             </div>
           </motion.div>
@@ -389,7 +366,7 @@ const Settings = () => {
         <div className="mt-6 flex justify-end">
           <button
             onClick={handleSaveSettings}
-            className="flex items-center rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+            className="flex items-center rounded-lg bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600"
           >
             <FiSave className="mr-2" />
             Enregistrer les modifications

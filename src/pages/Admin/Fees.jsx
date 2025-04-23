@@ -1,8 +1,62 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FiSearch, FiEdit2, FiTrash2, FiX, FiUsers } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiSearch, FiEdit2, FiTrash2, FiX, FiUsers, FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+
+// Composant Skeleton pour une ligne de tableau
+const TableRowSkeleton = () => (
+  <tr className="animate-pulse">
+    <td className="px-4 py-3">
+      <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+    </td>
+    <td className="px-4 py-3">
+      <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+    </td>
+    <td className="px-4 py-3">
+      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+    </td>
+    <td className="px-4 py-3">
+      <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+    </td>
+    <td className="px-4 py-3">
+      <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+    </td>
+    <td className="px-4 py-3">
+      <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+    </td>
+    <td className="px-4 py-3">
+      <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+    </td>
+    <td className="px-4 py-3">
+      <div className="flex space-x-3">
+        <div className="h-5 w-5 bg-gray-200 rounded"></div>
+        <div className="h-5 w-5 bg-gray-200 rounded"></div>
+      </div>
+    </td>
+  </tr>
+);
+
+// Composant Skeleton pour les filtres et cartes
+const FilterSkeleton = () => (
+  <div className="space-y-6 animate-pulse">
+    {/* Skeleton pour les cartes des niveaux */}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className="rounded-lg bg-gray-200 h-20"></div>
+      ))}
+    </div>
+    {/* Skeleton pour les filtres */}
+    <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-md sm:flex-row">
+      <div className="relative flex-1">
+        <div className="h-8 bg-gray-200 rounded w-full"></div>
+      </div>
+      <div className="flex gap-4">
+        <div className="h-8 bg-gray-200 rounded w-32"></div>
+      </div>
+    </div>
+  </div>
+);
 
 const Fees = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,22 +127,22 @@ const Fees = () => {
     fetchData();
   }, []);
 
-// Mettre à jour le montant payé automatiquement lorsque la désignation ou l'étudiant change
-useEffect(() => {
-  if (formData.etudiant && formData.designation) {
-    const selectedStudent = students.find((s) => s.id === parseInt(formData.etudiant));
-    const selectedTarif = tarifs.find(
-      (t) => t.id === parseInt(formData.designation) && t.niveau === selectedStudent?.niveau
-    );
-    if (selectedTarif) {
-      setFormData((prev) => ({ ...prev, montant_paye: selectedTarif.montant }));
+  // Mettre à jour le montant payé automatiquement
+  useEffect(() => {
+    if (formData.etudiant && formData.designation) {
+      const selectedStudent = students.find((s) => s.id === parseInt(formData.etudiant));
+      const selectedTarif = tarifs.find(
+        (t) => t.id === parseInt(formData.designation) && t.niveau === selectedStudent?.niveau
+      );
+      if (selectedTarif) {
+        setFormData((prev) => ({ ...prev, montant_paye: selectedTarif.montant }));
+      } else {
+        setFormData((prev) => ({ ...prev, montant_paye: '' }));
+      }
     } else {
-      setFormData((prev) => ({ ...prev, montant_paye: '' })); // Réinitialiser si aucun tarif correspondant
+      setFormData((prev) => ({ ...prev, montant_paye: '' }));
     }
-  } else {
-    setFormData((prev) => ({ ...prev, montant_paye: '' })); // Réinitialiser si étudiant ou désignation non sélectionnés
-  }
-}, [formData.designation, formData.etudiant, students, tarifs]);
+  }, [formData.designation, formData.etudiant, students, tarifs]);
 
   // Fonction pour associer les données des étudiants aux frais
   const enrichedFees = fees.map((fee) => {
@@ -182,10 +236,9 @@ useEffect(() => {
         montant_paye: parseFloat(formData.montant_paye),
         annee_academique: parseInt(formData.annee_academique),
         designation: formData.designation ? parseInt(formData.designation) : null,
-      };      
+      };
       if (modalMode === 'create') {
         await axios.post(feesUrl, payload);
-        
         const response = await axios.get(feesUrl);
         setFees(response.data);
         Swal.fire({
@@ -267,324 +320,389 @@ useEffect(() => {
     return tarifs.filter((tarif) => tarif.niveau === selectedStudent?.niveau);
   };
 
+  // Pagination : Génération des numéros de page
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(
+        <button
+          key={i}
+          onClick={() => setCurrentPage(i)}
+          className={`px-3 py-1 rounded-lg text-sm font-medium ${
+            currentPage === i ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return pageNumbers;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6" aria-busy={loading}>
       {/* En-tête */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
       >
-        <h1 className="text-2xl font-bold text-gray-800">Gestion des Frais de Scolarité</h1>
+        <h1 className="text-xl font-bold text-gray-800">Gestion des Frais de Scolarité</h1>
         <button
           onClick={() => openModal('create')}
-          className="rounded-lg bg-green-500 px-4 py-2 text-white hover:bg-green-600"
+          className="rounded-lg bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600"
         >
           + Nouveau Paiement
         </button>
       </motion.div>
 
-      {/* Cartes des niveaux */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {studentsByLevel.map((level) => (
-          <motion.div
-            key={level.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`rounded-lg p-4 shadow-lg cursor-pointer transition-transform transform hover:scale-105 ${
-              selectedLevel === level.nom ? 'bg-blue-100 border-blue-500' : 'bg-white'
-            }`}
-            onClick={() => setSelectedLevel(level.nom)}
-          >
-            <div className="flex items-center">
-              <div className="rounded-full bg-purple-500 p-3">
-                <FiUsers className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">{level.nom}</h3>
-                <p className="text-xl font-semibold text-gray-900">{level.studentCount}</p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Filtres */}
-      <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-md sm:flex-row">
-        <div className="relative flex-1">
-          <FiSearch className="absolute left-3 top-3 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Rechercher un étudiant..."
-            className="w-full rounded-lg border pl-10 pr-4 py-2"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-4">
-          <select
-            className="rounded-lg border px-4 py-2"
-            value={selectedLevel}
-            onChange={(e) => setSelectedLevel(e.target.value)}
-          >
-            <option value="all">Tous les niveaux</option>
-            {levels.map((level) => (
-              <option key={level.id} value={level.nom}>{level.nom}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Chargement dynamique */}
+      {/* Chargement ou contenu */}
       {loading ? (
-        <div className="flex justify-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
+        <FilterSkeleton />
       ) : (
         <>
-          {/* Tableau des paiements */}
-          <div className="overflow-x-auto rounded-lg bg-white shadow-md">
-            <table className="w-full table-auto">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Étudiant
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Niveau
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Désignation
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Montant Payé
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Année Académique
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Méthode
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {paginatedFees.map((fee) => (
-                  <motion.tr
-                    key={fee.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    whileHover={{ backgroundColor: '#f9fafb' }}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{fee.studentName}</span>
-                        <span className="text-sm text-gray-500">{fee.studentId}</span>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">{fee.level}</td>
-                    <td className="whitespace-nowrap px-6 py-4">{fee.designation_nom}</td>
-                    <td className="whitespace-nowrap px-6 py-4">{parseFloat(fee.montant_paye).toLocaleString()} Ar</td>
-                    <td className="whitespace-nowrap px-6 py-4">{new Date(fee.date_de_paiement).toLocaleDateString()}</td>
-                    <td className="whitespace-nowrap px-6 py-4">{fee.academicYear}</td>
-                    <td className="whitespace-nowrap px-6 py-4">{fee.methode_paiement}</td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="flex space-x-3">
-                        <button onClick={() => openModal('update', fee)} className="text-blue-600 hover:text-blue-900">
-                          <FiEdit2 className="h-5 w-5" />
-                        </button>
-                        <button onClick={() => handleDelete(fee.id)} className="text-red-600 hover:text-red-900">
-                          <FiTrash2 className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Cartes des niveaux */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {studentsByLevel.map((level) => (
+              <motion.div
+                key={level.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`rounded-lg p-4 shadow-lg cursor-pointer transition-transform transform hover:scale-105 ${
+                  selectedLevel === level.nom ? 'bg-blue-100 border-blue-500' : 'bg-white'
+                }`}
+                onClick={() => setSelectedLevel(level.nom)}
+              >
+                <div className="flex items-center">
+                  <div className="rounded-full bg-purple-500 p-2">
+                    <FiUsers className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-xs font-medium text-gray-500">{level.nom}</h3>
+                    <p className="text-lg font-semibold text-gray-900">{level.studentCount}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between rounded-lg bg-white px-4 py-3 shadow-md">
-            <div className="flex items-center">
-              <span className="text-sm text-gray-700">
-                Affichage de {(currentPage - 1) * itemsPerPage + 1} à{' '}
-                {Math.min(currentPage * itemsPerPage, filteredFees.length)} sur {filteredFees.length}{' '}
-                paiements
-              </span>
+          {/* Filtres */}
+          <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-md sm:flex-row">
+            <div className="relative flex-1">
+              <FiSearch className="absolute left-3 top-2.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher un étudiant..."
+                className="w-full rounded-lg border pl-10 pr-4 py-2 text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <div className="flex items-center space-x-2">
-              <button
-                className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                disabled={currentPage === 1}
+            <div className="flex gap-4">
+              <select
+                className="rounded-lg border px-4 py-2 text-sm"
+                value={selectedLevel}
+                onChange={(e) => setSelectedLevel(e.target.value)}
               >
-                Précédent
-              </button>
-              <button
-                className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
-                onClick={() => setCurrentPage((page) => page + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Suivant
-              </button>
+                <option value="all">Tous les niveaux</option>
+                {levels.map((level) => (
+                  <option key={level.id} value={level.nom}>{level.nom}</option>
+                ))}
+              </select>
             </div>
           </div>
         </>
       )}
 
-      {/* Modal personnalisé */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">
-                {modalMode === 'create' ? 'Nouveau Paiement' : 'Modifier Paiement'}
-              </h2>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">
-                <FiX className="h-6 w-6" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Recherche par matricule</label>
-                <div className="relative">
-                  <FiSearch className="absolute left-3 top-3 text-gray-400" />
-                  <input
-                    type="text"
-                    value={matriculeSearch}
-                    onChange={(e) => setMatriculeSearch(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 pl-10 shadow-sm"
-                    placeholder="Entrez le matricule..."
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Étudiant</label>
-                <select
-                  name="etudiant"
-                  value={formData.etudiant}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                >
-                  <option value="">Sélectionner un étudiant</option>
-                  {filteredStudents.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.nom} {student.prenom} ({student.matricule})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Désignation</label>
-                <select
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                  disabled={!formData.etudiant}
-                >
-                  <option value="">Sélectionner une désignation</option>
-                  {getAvailableDesignations().map((tarif) => (
-                    <option key={tarif.id} value={tarif.id}>
-                      {tarif.designation}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Montant Payé</label>
-                <input
-                  type="number"
-                  name="montant_paye"
-                  value={formData.montant_paye}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Méthode de Paiement</label>
-                <select
-                  name="methode_paiement"
-                  value={formData.methode_paiement}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                >
-                  <option value="">Sélectionner une méthode</option>
-                  {paymentMethods.map((method) => (
-                    <option key={method.value} value={method.value}>
-                      {method.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Référence</label>
-                <input
-                  type="text"
-                  name="reference"
-                  value={formData.reference}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Date de Paiement</label>
-                <input
-                  type="date"
-                  name="date_de_paiement"
-                  value={formData.date_de_paiement}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Année Académique</label>
-                <select
-                  name="annee_academique"
-                  value={formData.annee_academique}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                >
-                  <option value="">Sélectionner une année</option>
-                  {academicYears.map((year) => (
-                    <option key={year.id} value={year.id}>
-                      {year.annee} {year.active ? '(Active)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-                >
-                  {modalMode === 'create' ? 'Enregistrer' : 'Mettre à jour'}
-                </button>
-              </div>
-            </form>
+      {/* Tableau des paiements */}
+      <div className="overflow-x-auto rounded-lg bg-white shadow-md">
+        <table className="w-full table-auto">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Étudiant
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Niveau
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Désignation
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Montant
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Date
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Année
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Méthode
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {loading ? (
+              Array.from({ length: itemsPerPage }).map((_, index) => (
+                <TableRowSkeleton key={index} />
+              ))
+            ) : (
+              <AnimatePresence>
+                {paginatedFees.map((fee) => (
+                  <motion.tr
+                    key={fee.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    whileHover={{ backgroundColor: '#f9fafb' }}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-medium">{fee.studentName}</span>
+                        <span className="text-xs text-gray-500">{fee.studentId}</span>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs">{fee.level}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs">{fee.designation_nom}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs">{parseFloat(fee.montant_paye).toLocaleString()} Ar</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs">{new Date(fee.date_de_paiement).toLocaleDateString()}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs">{fee.academicYear}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs">{fee.methode_paiement}</td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <div className="flex space-x-3">
+                        <button onClick={() => openModal('update', fee)} className="text-blue-600 hover:text-blue-900">
+                          <FiEdit2 className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => handleDelete(fee.id)} className="text-red-600 hover:text-red-900">
+                          <FiTrash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {!loading && filteredFees.length > 0 && (
+        <div className="flex flex-col items-center justify-between rounded-lg bg-white px-4 py-3 shadow-md sm:flex-row">
+          <span className="text-xs text-gray-700">
+            Affichage de {(currentPage - 1) * itemsPerPage + 1} à{' '}
+            {Math.min(currentPage * itemsPerPage, filteredFees.length)} sur {filteredFees.length}{' '}
+            paiements
+          </span>
+          <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+            <button
+              className="rounded-lg border p-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              aria-label="Première page"
+            >
+              <FiChevronsLeft className="h-4 w-4" />
+            </button>
+            <button
+              className="rounded-lg border p-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              aria-label="Page précédente"
+            >
+              <FiChevronLeft className="h-4 w-4" />
+            </button>
+            {renderPageNumbers()}
+            <button
+              className="rounded-lg border p-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+              onClick={() => setCurrentPage((page) => page + 1)}
+              disabled={currentPage === totalPages}
+              aria-label="Page suivante"
+            >
+              <FiChevronRight className="h-4 w-4" />
+            </button>
+            <button
+              className="rounded-lg border p-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              aria-label="Dernière page"
+            >
+              <FiChevronsRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}
+
+      {/* Modal personnalisé */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              className="bg-white rounded-lg p-6 w-full max-w-md"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold">
+                  {modalMode === 'create' ? 'Nouveau Paiement' : 'Modifier Paiement'}
+                </h2>
+                <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">
+                  <FiX className="h-6 w-6" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Recherche par matricule</label>
+                  <div className="relative">
+                    <FiSearch className="absolute left-3 top-2.5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={matriculeSearch}
+                      onChange={(e) => setMatriculeSearch(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 pl-10 shadow-sm text-sm"
+                      placeholder="Entrez le matricule..."
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Étudiant</label>
+                  <select
+                    name="etudiant"
+                    value={formData.etudiant}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
+                    required
+                  >
+                    <option value="">Sélectionner un étudiant</option>
+                    {filteredStudents.map((student) => (
+                      <option key={student.id} value={student.id}>
+                        {student.nom} {student.prenom} ({student.matricule})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Désignation</label>
+                  <select
+                    name="designation"
+                    value={formData.designation}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
+                    required
+                    disabled={!formData.etudiant}
+                  >
+                    <option value="">Sélectionner une désignation</option>
+                    {getAvailableDesignations().map((tarif) => (
+                      <option key={tarif.id} value={tarif.id}>
+                        {tarif.designation}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Montant Payé</label>
+                  <input
+                    type="number"
+                    name="montant_paye"
+                    value={formData.montant_paye}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
+                    required
+                    readOnly
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Méthode de Paiement</label>
+                  <select
+                    name="methode_paiement"
+                    value={formData.methode_paiement}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
+                    required
+                  >
+                    <option value="">Sélectionner une méthode</option>
+                    {paymentMethods.map((method) => (
+                      <option key={method.value} value={method.value}>
+                        {method.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Référence</label>
+                  <input
+                    type="text"
+                    name="reference"
+                    value={formData.reference}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Date de Paiement</label>
+                  <input
+                    type="date"
+                    name="date_de_paiement"
+                    value={formData.date_de_paiement}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Année Académique</label>
+                  <select
+                    name="annee_academique"
+                    value={formData.annee_academique}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
+                    required
+                  >
+                    <option value="">Sélectionner une année</option>
+                    {academicYears.map((year) => (
+                      <option key={year.id} value={year.id}>
+                        {year.annee} {year.active ? '(Active)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm"
+                  >
+                    {modalMode === 'create' ? 'Enregistrer' : 'Mettre à jour'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
