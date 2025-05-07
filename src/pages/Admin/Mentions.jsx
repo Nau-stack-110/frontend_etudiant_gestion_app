@@ -25,6 +25,7 @@ const Mentions = () => {
 
   const fetchMentions = async () => {
     try {
+      // const token = localStorage.getItem('access_token');
       const response = await fetch(`${BASEURL}/mentions/`);
       if (!response.ok) throw new Error('Failed to fetch mentions');
       const data = await response.json();

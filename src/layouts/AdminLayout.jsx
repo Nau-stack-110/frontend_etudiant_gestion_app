@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -7,17 +7,40 @@ import {
   FiLogOut, FiGrid, 
 } from 'react-icons/fi';
 import Swal from 'sweetalert2';
+import { axios } from 'axios';
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
-  // Données factices de l'admin connecté
-  const currentAdmin = {
-    name: "ESDES",
-    role: "Administrateur",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John"
-  };
+  const [currentAdmin, setCurrentAdmin] = useState({
+    name: '',
+    role: 'Administrateur',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John'
+  });
+  
+  useEffect(() => {
+    const fetchAdminProfile = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const res = await axios.get('https://api-etudiant-esdes.onrender.com/api/me/', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const user = res.data;
+        setCurrentAdmin((prev) => ({
+          ...prev,
+          name: user.username 
+        }));
+      } catch (err) {
+        console.error('Erreur lors de la récupération du profil admin :', err);
+      }
+    };
+  
+    fetchAdminProfile();
+  }, []);
+  
 
   const menuItems = [
     { path: '/admin/dashboard', icon: <FiHome />, label: 'Tableau de bord' },
