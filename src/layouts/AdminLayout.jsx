@@ -7,7 +7,7 @@ import {
   FiLogOut, FiGrid, 
 } from 'react-icons/fi';
 import Swal from 'sweetalert2';
-import { axios } from 'axios';
+import axios from 'axios';
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
