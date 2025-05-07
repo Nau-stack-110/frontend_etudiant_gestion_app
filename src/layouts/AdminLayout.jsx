@@ -14,7 +14,7 @@ const AdminLayout = () => {
 
   // Données factices de l'admin connecté
   const currentAdmin = {
-    name: "John Doe",
+    name: "ESDES",
     role: "Administrateur",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John"
   };
@@ -43,7 +43,9 @@ const AdminLayout = () => {
       cancelButtonText: 'Annuler'
     }).then((result) => {
       if (result.isConfirmed) {
-        // TODO: Ajouter la logique de déconnexion ici
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('isAdmin');
         navigate('/login');
       }
     });

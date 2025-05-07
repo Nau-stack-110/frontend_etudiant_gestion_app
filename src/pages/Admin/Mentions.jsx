@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiChevronDown, FiChevronUp, FiPlus, FiEdit, FiSave, FiX } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
-const BASEURL = "http://127.0.0.1:8000/api";
+const BASEURL = "https://api-etudiant-esdes.onrender.com/api";
 
 const Mentions = () => {
   const [mentions, setMentions] = useState([]);

@@ -83,7 +83,6 @@ const Fees = () => {
   const [matriculeSearch, setMatriculeSearch] = useState('');
   const itemsPerPage = 10;
 
-  // URLs des APIs
   const apiBaseUrl = 'http://localhost:8000/api';
   const feesUrl = `${apiBaseUrl}/frais-scolarite/`;
   const studentsUrl = `${apiBaseUrl}/etudiants/`;
@@ -108,6 +107,7 @@ const Fees = () => {
         setLevels(levelsResponse.data);
         setTarifs(tarifsResponse.data);
         setAcademicYears(academicYearsResponse.data);
+        
         // Set default academic year to active year
         const activeYear = academicYearsResponse.data.find(year => year.active);
         if (activeYear) {

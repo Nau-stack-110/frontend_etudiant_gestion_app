@@ -39,7 +39,7 @@ const Settings = () => {
   const [openLevels, setOpenLevels] = useState({}); 
 
   // URLs des APIs
-  const apiBaseUrl = 'http://localhost:8000/api';
+  const apiBaseUrl = 'https://api-etudiant-esdes.onrender.com/api';
   const levelsUrl = `${apiBaseUrl}/niveau/`;
   const tarifsUrl = `${apiBaseUrl}/tarifs/`;
 
@@ -54,6 +54,7 @@ const Settings = () => {
         ]);
         setLevels(levelsResponse.data);
         setTarifs(tarifsResponse.data);
+        
         // Initialiser les sections pliables (toutes fermées par défaut)
         setOpenLevels(
           levelsResponse.data.reduce((acc, level) => ({

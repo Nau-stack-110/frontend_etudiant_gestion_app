@@ -4,7 +4,7 @@ import { FiSearch, FiUser, FiBook, FiShield, FiDollarSign, FiPlus, FiX } from 'r
 import { FaFilter } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
-const BASEURL = "http://127.0.0.1:8000/api";
+const BASEURL = "https://api-etudiant-esdes.onrender.com/api";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');

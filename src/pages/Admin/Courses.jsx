@@ -15,8 +15,8 @@ const Courses = () => {
     const fetchData = async () => {
       try {
         const [parcoursRes, mentionsRes] = await Promise.all([
-          fetch('http://localhost:8000/api/parcours/'),
-          fetch('http://localhost:8000/api/mentions/')
+          fetch('https://api-etudiant-esdes.onrender.com/api/parcours/'),
+          fetch('https://api-etudiant-esdes.onrender.com/api/mentions/')
         ]);
         
         const parcoursData = await parcoursRes.json();
@@ -26,6 +26,7 @@ const Courses = () => {
         setMentions(mentionsData);
       } catch (error) {
         Swal.fire('Erreur', 'Impossible de charger les données', 'error');
+        console.log(error);
       }
     };
     
@@ -68,7 +69,7 @@ const Courses = () => {
 
     if (formValues) {
       try {
-        const response = await fetch('http://localhost:8000/api/parcours/', {
+        const response = await fetch('https://api-etudiant-esdes.onrender.com/api/parcours/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formValues)
@@ -109,7 +110,7 @@ const Courses = () => {
 
       if (formValues) {
         try {
-          const response = await fetch(`http://localhost:8000/api/parcours/${selectedParcours.id}/`, {
+          const response = await fetch(`https://api-etudiant-esdes.onrender.com/api/parcours/${selectedParcours.id}/`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formValues)
@@ -143,7 +144,7 @@ const Courses = () => {
 
     if (confirmation.isConfirmed) {
       try {
-        const response = await fetch(`http://localhost:8000/api/parcours/${id}/`, { 
+        const response = await fetch(`https://api-etudiant-esdes.onrender.com/api/parcours/${id}/`, { 
           method: 'DELETE' 
         });
         

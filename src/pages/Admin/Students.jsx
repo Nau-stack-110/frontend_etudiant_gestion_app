@@ -96,7 +96,7 @@ export default function StudentsTable() {
 
   const fetchStudents = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/etudiants/");
+      const res = await axios.get("https://api-etudiant-esdes.onrender.com/api/etudiants/");
       setStudents(res.data);
       setFilteredStudents(res.data);
     } catch (err) {
@@ -108,7 +108,7 @@ export default function StudentsTable() {
 
   const fetchMentions = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/mentions/");
+      const res = await axios.get("https://api-etudiant-esdes.onrender.com/api/mentions/");
       setMentions(res.data);
     } catch (err) {
       setError("Erreur lors du chargement des mentions", err);
@@ -117,7 +117,7 @@ export default function StudentsTable() {
 
   const fetchNiveaux = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/niveau/");
+      const res = await axios.get("https://api-etudiant-esdes.onrender.com/api/niveau/");
       setNiveaux(res.data);
     } catch (err) {
       setError("Erreur lors du chargement des niveaux", err);
@@ -126,7 +126,7 @@ export default function StudentsTable() {
 
   const fetchParcours = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/parcours/");
+      const res = await axios.get("https://api-etudiant-esdes.onrender.com/api/parcours/");
       setParcours(res.data);
     } catch (err) {
       setError("Erreur lors du chargement des parcours", err);
@@ -213,7 +213,7 @@ export default function StudentsTable() {
       updateData.append("moyenne", formData.moyenne || "");
       updateData.append("responsabilite", formData.responsabilite);
 
-      await axios.put(`http://localhost:8000/api/etudiants/${selectedStudent.id}/`, updateData, {
+      await axios.put(`https://api-etudiant-esdes.onrender.com/api/etudiants/${selectedStudent.id}/`, updateData, {
         headers: {
           "Content-Type": "multipart/form-data"
         }
@@ -252,7 +252,7 @@ export default function StudentsTable() {
     });
     if (confirmation.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:8000/api/etudiants/${student.id}/`);
+        await axios.delete(`https://api-etudiant-esdes.onrender.com/api/etudiants/${student.id}/`);
         await fetchStudents();
         Swal.fire('Supprimé!', 'Etudiant supprimé', 'success');
       } catch (err) {

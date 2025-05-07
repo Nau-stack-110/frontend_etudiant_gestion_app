@@ -4,7 +4,7 @@ import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiBook } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
-const BASEURL = "http://127.0.0.1:8000/api";
+const BASEURL = "https://api-etudiant-esdes.onrender.com/api";
 
 const Professors = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -99,6 +99,7 @@ const Professors = () => {
           Swal.fire('Succès', 'Professeur ajouté avec succès', 'success');
         } catch (e) {
           Swal.fire('Erreur', 'Impossible d\'ajouter le professeur', 'error');
+          console.log('erreur : ', e)
         }
       }
     });
@@ -145,6 +146,7 @@ const Professors = () => {
           Swal.fire('Succès', 'Professeur modifié avec succès', 'success');
         } catch (e) {
           Swal.fire('Erreur', 'Impossible de modifier le professeur', 'error');
+          console.log('erreur : ', e)
         }
       }
     });
@@ -166,6 +168,7 @@ const Professors = () => {
           Swal.fire('Supprimé!', 'Le professeur a été supprimé.', 'success');
         } catch (e) {
           Swal.fire('Erreur', 'Impossible de supprimer le professeur', 'error');
+          console.log('erreur : ', e)
         }
       }
     });

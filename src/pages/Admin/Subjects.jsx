@@ -17,8 +17,8 @@ const Subjects = () => {
     const fetchData = async () => {
       try {
         const [matieresRes, mentionsRes] = await Promise.all([
-          fetch('http://localhost:8000/api/matiere/'),
-          fetch('http://localhost:8000/api/mentions/')
+          fetch('https://api-etudiant-esdes.onrender.com/api/matiere/'),
+          fetch('https://api-etudiant-esdes.onrender.com/api/mentions/')
         ]);
         
         const matieresData = await matieresRes.json();
@@ -59,8 +59,8 @@ const Subjects = () => {
 
     try {
       const url = currentMatiere 
-        ? `http://localhost:8000/api/matiere/${currentMatiere.id}/`
-        : 'http://localhost:8000/api/matiere/';
+        ? `https://api-etudiant-esdes.onrender.com/api/matiere/${currentMatiere.id}/`
+        : 'https://api-etudiant-esdes.onrender.com/api/matiere/';
       
       const method = currentMatiere ? 'PUT' : 'POST';
       
@@ -86,7 +86,7 @@ const Subjects = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Confirmer la suppression ?')) {
       try {
-        await fetch(`http://localhost:8000/api/matiere/${id}/`, { method: 'DELETE' });
+        await fetch(`https://api-etudiant-esdes.onrender.com/api/matiere/${id}/`, { method: 'DELETE' });
         setMatieres(prev => prev.filter(m => m.id !== id));
       } catch (error) {
         console.error('Erreur:', error);
