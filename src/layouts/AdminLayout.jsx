@@ -44,7 +44,8 @@ const AdminLayout = () => {
 
   const menuItems = [
     { path: '/admin/dashboard', icon: <FiHome />, label: 'Tableau de bord' },
-    { path: '/admin/students', icon: <FiUsers />, label: 'Étudiants' },
+    { path: '/admin/distance', icon: <FiUsers />, label: 'Distance' },
+    { path: '/admin/presentiel', icon: <FiCast />, label: 'Presentiel' },
     { path: '/admin/users', icon: <FiUserCheck />, label: 'Utilisateurs' },
     { path: '/admin/professors', icon: <FiUserCheck />, label: 'Professeurs' },
     { path: '/admin/subjects', icon: <FiBook />, label: 'Matières' },

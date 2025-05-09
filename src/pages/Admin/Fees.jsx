@@ -83,7 +83,7 @@ const Fees = () => {
   const [matriculeSearch, setMatriculeSearch] = useState('');
   const itemsPerPage = 10;
 
-  const apiBaseUrl = 'https://api-etudiant-esdes.onrender.com/api';
+  const apiBaseUrl = 'http://localhost:8000/api';
   const feesUrl = `${apiBaseUrl}/frais-scolarite/`;
   const studentsUrl = `${apiBaseUrl}/etudiants/`;
   const levelsUrl = `${apiBaseUrl}/niveau/`;
