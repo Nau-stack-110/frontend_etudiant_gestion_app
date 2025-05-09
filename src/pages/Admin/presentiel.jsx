@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiEye, FiDownload, FiX, FiFilter, FiPlus, FiChevronDown, FiSearch, FiEdit, FiTrash2, FiSave } from "react-icons/fi";
 import Swal from 'sweetalert2';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = 'https://api-etudiant-esdes.onrender.com/api';
 
 
 const TableRowSkeleton = () => (

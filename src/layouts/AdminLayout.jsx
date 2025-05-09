@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { 
   FiMenu, FiX, FiHome, FiUsers, FiUserCheck, 
   FiBook, FiBookmark, FiDollarSign, FiSettings,
-  FiLogOut, FiGrid, 
+  FiLogOut, FiGrid, FiCast,
 } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import axios from 'axios';

@@ -43,7 +43,7 @@ const Settings = () => {
   const [newLevel, setNewLevel] = useState('');
 
   // URLs des APIs
-  const apiBaseUrl = 'http://localhost:8000/api';
+  const apiBaseUrl = 'https://api-etudiant-esdes.onrender.com/api';
   const levelsUrl = `${apiBaseUrl}/niveau/`;
   const tarifsUrl = `${apiBaseUrl}/tarifs/`;
   const academicYearsUrl = `${apiBaseUrl}/annee-academique/`;
