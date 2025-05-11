@@ -254,7 +254,10 @@ export default function StudentsTable() {
         setShowCreateModal(false);
         Swal.fire('Succès!', 'Étudiant créé avec succès', 'success');
       } catch (err) {
-        Swal.fire('Erreur', err.response?.data?.message || err.message, 'error');
+        const errorMessage = err.response?.data
+         ? JSON.stringify(err.response.data)
+         : err.message;
+        Swal.fire('Erreur', errorMessage, 'error');
       }
     };
 
@@ -267,7 +270,9 @@ export default function StudentsTable() {
       updateData.append("nom", formData.nom);
       updateData.append("prenom", formData.prenom);
       updateData.append("mention", formData.mention || "");
-      updateData.append("parcours", formData.parcours || "");
+      if (formData.parcours !== null && formData.parcours !== "") {
+        updateData.append("parcours", formData.parcours);
+      }
       updateData.append("date_de_naissance", formData.date_de_naissance || "");
       updateData.append("adresse", formData.adresse);
       updateData.append("niveau", formData.niveau || "");
