@@ -8,6 +8,7 @@ import {
   FiDollarSign,
   FiChevronDown,
   FiChevronUp,
+  FiTrash2
 } from "react-icons/fi";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -209,6 +210,42 @@ const Settings = () => {
       });
     } finally {
       setLoadingYears(false);
+    }
+  };
+
+  // Supprimer une niveau
+  const handleDeleteLevel = async (id) => {
+    const confirm = await Swal.fire({
+      icon: "warning",
+      title: "Confirmation",
+      text: "Êtes-vous sûr de vouloir supprimer ce niveau ?",
+      showCancelButton: true,
+      confirmButtonText: "Oui, supprimer",
+      cancelButtonText: "Annuler",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      setLoading(true);
+      await axios.delete(`${levelsUrl}${id}/`);
+      setLevels(levels.filter((level) => level.id !== id));
+      Swal.fire({
+        icon: "success",
+        title: "Succès",
+        text: "Niveau supprimé avec succès",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      setError("Erreur lors de la suppression du niveau", err);
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "Erreur lors de la suppression du niveau",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -711,9 +748,16 @@ const Settings = () => {
                 {levels.map((level) => (
                   <div
                     key={level.id}
-                    className="p-3 bg-gray-50 rounded-md text-center"
+                    className="p-3 bg-gray-50 rounded-md flex items-center justify-between"
                   >
                     <span className="font-medium">{level.nom}</span>
+                    <button
+                      onClick={() => handleDeleteLevel(level.id)}
+                      className="text-red-500 hover:text-red-600 p-1 rounded-full hover:bg-red-100 transition-colors"
+                      title="Supprimer le niveau"
+                    >
+                      <FiTrash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -742,7 +786,7 @@ const Settings = () => {
             </div>
           </motion.div>
         )}
-
+        
         {/* Sécurité */}
         {activeTab === "security" && (
           <motion.div
