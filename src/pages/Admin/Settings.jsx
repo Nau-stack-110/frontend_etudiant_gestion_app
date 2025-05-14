@@ -1,10 +1,16 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FiUser, FiLock, FiSave, FiCalendar, FiDollarSign, FiChevronDown, FiChevronUp 
-} from 'react-icons/fi';
-import axios from 'axios';
-import Swal from 'sweetalert2';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FiUser,
+  FiLock,
+  FiSave,
+  FiCalendar,
+  FiDollarSign,
+  FiChevronDown,
+  FiChevronUp,
+} from "react-icons/fi";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 // Composant Skeleton pour la section Frais Scolarité
 const FeesSkeleton = () => (
@@ -26,24 +32,28 @@ const FeesSkeleton = () => (
 );
 
 const Settings = () => {
-  const [activeTab, setActiveTab] = useState('fees');
+  const [activeTab, setActiveTab] = useState("fees");
   const [academicYears, setAcademicYears] = useState([]);
-  const [newYear, setNewYear] = useState('');
+  const [newYear, setNewYear] = useState("");
   const [loadingYears, setLoadingYears] = useState(true);
   const [levels, setLevels] = useState([]);
   const [tarifs, setTarifs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [openLevels, setOpenLevels] = useState({}); 
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [openLevels, setOpenLevels] = useState({});
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [newTarif, setNewTarif] = useState({ designation: '', montant: '', niveau: null });
-  const [newLevel, setNewLevel] = useState('');
+  const [newTarif, setNewTarif] = useState({
+    designation: "",
+    montant: "",
+    niveau: null,
+  });
+  const [newLevel, setNewLevel] = useState("");
 
   // URLs des APIs
-  const apiBaseUrl = 'https://api-etudiant-esdes.onrender.com/api';
+  const apiBaseUrl = "https://api-etudiant-esdes.onrender.com/api";
   const levelsUrl = `${apiBaseUrl}/niveau/`;
   const tarifsUrl = `${apiBaseUrl}/tarifs/`;
   const academicYearsUrl = `${apiBaseUrl}/annee-academique/`;
@@ -55,28 +65,32 @@ const Settings = () => {
       setLoading(true);
       setLoadingYears(true);
       try {
-        const [levelsResponse, tarifsResponse, yearsResponse] = await Promise.all([
-          axios.get(levelsUrl),
-          axios.get(tarifsUrl),
-          axios.get(academicYearsUrl)
-        ]);
+        const [levelsResponse, tarifsResponse, yearsResponse] =
+          await Promise.all([
+            axios.get(levelsUrl),
+            axios.get(tarifsUrl),
+            axios.get(academicYearsUrl),
+          ]);
         setLevels(levelsResponse.data);
         setTarifs(tarifsResponse.data);
         setAcademicYears(yearsResponse.data);
-        
+
         // Initialiser les sections pliables (toutes fermées par défaut)
         setOpenLevels(
-          levelsResponse.data.reduce((acc, level) => ({
-            ...acc,
-            [level.id]: false
-          }), {})
+          levelsResponse.data.reduce(
+            (acc, level) => ({
+              ...acc,
+              [level.id]: false,
+            }),
+            {}
+          )
         );
       } catch (err) {
-        setError('Erreur lors du chargement des données', err);
+        setError("Erreur lors du chargement des données", err);
         Swal.fire({
-          icon: 'error',
-          title: 'Erreur',
-          text: 'Erreur lors du chargement des données'
+          icon: "error",
+          title: "Erreur",
+          text: "Erreur lors du chargement des données",
         });
       } finally {
         setLoading(false);
@@ -90,45 +104,45 @@ const Settings = () => {
   const validateYearFormat = (year) => {
     const regex = /^(\d{4})-(\d{4})$/;
     if (!regex.test(year)) return false;
-    
-    const [start, end] = year.split('-').map(Number);
+
+    const [start, end] = year.split("-").map(Number);
     return end === start + 1;
   };
 
   // Créer une nouvelle année académique
   const handleCreateYear = async () => {
     if (!newYear) return;
-    
+
     if (!validateYearFormat(newYear)) {
       Swal.fire({
-        icon: 'error',
-        title: 'Format invalide',
-        text: 'Le format doit être AAAA-AAAA (ex: 2024-2025) et les années doivent être consécutives'
+        icon: "error",
+        title: "Format invalide",
+        text: "Le format doit être AAAA-AAAA (ex: 2024-2025) et les années doivent être consécutives",
       });
       return;
     }
-    
+
     try {
       setLoadingYears(true);
       const response = await axios.post(academicYearsUrl, {
         annee: newYear,
-        active: false
+        active: false,
       });
       setAcademicYears([...academicYears, response.data]);
-      setNewYear('');
+      setNewYear("");
       Swal.fire({
-        icon: 'success',
-        title: 'Succès',
-        text: 'Année académique créée avec succès',
+        icon: "success",
+        title: "Succès",
+        text: "Année académique créée avec succès",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (err) {
-      setError('Erreur lors de la création de l\'année', err);
+      setError("Erreur lors de la création de l'année", err);
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Erreur lors de la création de l\'année académique'
+        icon: "error",
+        title: "Erreur",
+        text: "Erreur lors de la création de l'année académique",
       });
     } finally {
       setLoadingYears(false);
@@ -140,22 +154,22 @@ const Settings = () => {
     try {
       setLoadingYears(true);
       const response = await axios.put(`${academicYearsUrl}${id}/`, newData);
-      setAcademicYears(academicYears.map(year => 
-        year.id === id ? response.data : year
-      ));
+      setAcademicYears(
+        academicYears.map((year) => (year.id === id ? response.data : year))
+      );
       Swal.fire({
-        icon: 'success',
-        title: 'Succès',
-        text: 'Année académique mise à jour avec succès',
+        icon: "success",
+        title: "Succès",
+        text: "Année académique mise à jour avec succès",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (err) {
-      setError('Erreur lors de la mise à jour de l\'année', err);
+      setError("Erreur lors de la mise à jour de l'année", err);
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Erreur lors de la mise à jour de l\'année académique'
+        icon: "error",
+        title: "Erreur",
+        text: "Erreur lors de la mise à jour de l'année académique",
       });
     } finally {
       setLoadingYears(false);
@@ -165,33 +179,33 @@ const Settings = () => {
   // Supprimer une année académique
   const handleDeleteYear = async (id) => {
     const confirm = await Swal.fire({
-      icon: 'warning',
-      title: 'Confirmation',
-      text: 'Êtes-vous sûr de vouloir supprimer cette année académique ?',
+      icon: "warning",
+      title: "Confirmation",
+      text: "Êtes-vous sûr de vouloir supprimer cette année académique ?",
       showCancelButton: true,
-      confirmButtonText: 'Oui, supprimer',
-      cancelButtonText: 'Annuler'
+      confirmButtonText: "Oui, supprimer",
+      cancelButtonText: "Annuler",
     });
-    
+
     if (!confirm.isConfirmed) return;
-    
+
     try {
       setLoadingYears(true);
       await axios.delete(`${academicYearsUrl}${id}/`);
-      setAcademicYears(academicYears.filter(year => year.id !== id));
+      setAcademicYears(academicYears.filter((year) => year.id !== id));
       Swal.fire({
-        icon: 'success',
-        title: 'Succès',
-        text: 'Année académique supprimée avec succès',
+        icon: "success",
+        title: "Succès",
+        text: "Année académique supprimée avec succès",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (err) {
-      setError('Erreur lors de la suppression de l\'année', err);
+      setError("Erreur lors de la suppression de l'année", err);
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Erreur lors de la suppression de l\'année académique'
+        icon: "error",
+        title: "Erreur",
+        text: "Erreur lors de la suppression de l'année académique",
       });
     } finally {
       setLoadingYears(false);
@@ -199,23 +213,23 @@ const Settings = () => {
   };
 
   // Grouper les tarifs par niveau
-  const groupedTarifs = levels.map(level => ({
+  const groupedTarifs = levels.map((level) => ({
     ...level,
-    tarifs: tarifs.filter(tarif => tarif.niveau === level.id)
+    tarifs: tarifs.filter((tarif) => tarif.niveau === level.id),
   }));
 
   // Gérer l'ouverture/fermeture des sections
   const toggleLevel = (levelId) => {
-    setOpenLevels(prev => ({
+    setOpenLevels((prev) => ({
       ...prev,
-      [levelId]: !prev[levelId]
+      [levelId]: !prev[levelId],
     }));
   };
 
   // Mettre à jour un tarif
   const handleTarifChange = (tarifId, newMontant) => {
-    setTarifs(prev =>
-      prev.map(tarif =>
+    setTarifs((prev) =>
+      prev.map((tarif) =>
         tarif.id === tarifId ? { ...tarif, montant: newMontant } : tarif
       )
     );
@@ -225,9 +239,9 @@ const Settings = () => {
   const handleAddTarif = async (levelId) => {
     if (!newTarif.designation || !newTarif.montant) {
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Veuillez remplir tous les champs du nouveau tarif.'
+        icon: "error",
+        title: "Erreur",
+        text: "Veuillez remplir tous les champs du nouveau tarif.",
       });
       return;
     }
@@ -237,25 +251,25 @@ const Settings = () => {
       const response = await axios.post(tarifsUrl, {
         designation: newTarif.designation,
         montant: parseFloat(newTarif.montant),
-        niveau: levelId
+        niveau: levelId,
       });
-      
+
       setTarifs([...tarifs, response.data]);
-      setNewTarif({ designation: '', montant: '', niveau: null });
-      
+      setNewTarif({ designation: "", montant: "", niveau: null });
+
       Swal.fire({
-        icon: 'success',
-        title: 'Succès',
-        text: 'Nouveau tarif ajouté avec succès',
+        icon: "success",
+        title: "Succès",
+        text: "Nouveau tarif ajouté avec succès",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (err) {
-      setError('Erreur lors de l\'ajout du tarif', err);
+      setError("Erreur lors de l'ajout du tarif", err);
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Erreur lors de l\'ajout du nouveau tarif'
+        icon: "error",
+        title: "Erreur",
+        text: "Erreur lors de l'ajout du nouveau tarif",
       });
     } finally {
       setLoading(false);
@@ -266,26 +280,26 @@ const Settings = () => {
   const handleSaveSettings = async () => {
     try {
       // Sauvegarder chaque tarif modifié
-      const updatePromises = tarifs.map(tarif =>
+      const updatePromises = tarifs.map((tarif) =>
         axios.put(`${tarifsUrl}${tarif.id}/`, {
           ...tarif,
-          montant: parseFloat(tarif.montant)
+          montant: parseFloat(tarif.montant),
         })
       );
       await Promise.all(updatePromises);
       Swal.fire({
-        icon: 'success',
-        title: 'Succès',
-        text: 'Paramètres enregistrés avec succès',
+        icon: "success",
+        title: "Succès",
+        text: "Paramètres enregistrés avec succès",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (err) {
-      setError('Erreur lors de la sauvegarde des paramètres', err);
+      setError("Erreur lors de la sauvegarde des paramètres", err);
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Erreur lors de la sauvegarde des paramètres'
+        icon: "error",
+        title: "Erreur",
+        text: "Erreur lors de la sauvegarde des paramètres",
       });
     }
   };
@@ -294,64 +308,71 @@ const Settings = () => {
   const handleChangePassword = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Veuillez remplir tous les champs.'
+        icon: "error",
+        title: "Erreur",
+        text: "Veuillez remplir tous les champs.",
       });
       return;
     }
 
     if (newPassword !== confirmPassword) {
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Le nouveau mot de passe et la confirmation ne correspondent pas.'
+        icon: "error",
+        title: "Erreur",
+        text: "Le nouveau mot de passe et la confirmation ne correspondent pas.",
       });
       return;
     }
 
     if (newPassword.length < 8) {
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Le nouveau mot de passe doit contenir au moins 8 caractères.'
+        icon: "error",
+        title: "Erreur",
+        text: "Le nouveau mot de passe doit contenir au moins 8 caractères.",
       });
       return;
     }
 
     try {
       setPasswordLoading(true);
-      const response = await axios.post(changePasswordUrl, {
-        old_password: oldPassword,
-        new_password: newPassword
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      const response = await axios.post(
+        changePasswordUrl,
+        {
+          old_password: oldPassword,
+          new_password: newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
         }
-      });
-      
+      );
+
       Swal.fire({
-        icon: 'success',
-        title: 'Succès',
-        text: response.data.message || 'Mot de passe changé avec succès',
+        icon: "success",
+        title: "Succès",
+        text: response.data.message || "Mot de passe changé avec succès",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
-      
+
       // Réinitialiser les champs
-      setOldPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (err) {
-      let errorMessage = 'Erreur lors du changement de mot de passe';
+      let errorMessage = "Erreur lors du changement de mot de passe";
       if (err.response && err.response.data) {
-        errorMessage = err.response.data.old_password || err.response.data.new_password || errorMessage;
+        errorMessage =
+          err.response.data.old_password ||
+          err.response.data.new_password ||
+          errorMessage;
       }
       setError(errorMessage);
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: errorMessage
+        icon: "error",
+        title: "Erreur",
+        text: errorMessage,
       });
     } finally {
       setPasswordLoading(false);
@@ -362,9 +383,9 @@ const Settings = () => {
   const handleCreateLevel = async () => {
     if (!newLevel) {
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Veuillez entrer un nom pour le nouveau niveau.'
+        icon: "error",
+        title: "Erreur",
+        text: "Veuillez entrer un nom pour le nouveau niveau.",
       });
       return;
     }
@@ -372,24 +393,24 @@ const Settings = () => {
     try {
       setLoading(true);
       const response = await axios.post(levelsUrl, {
-        nom: newLevel
+        nom: newLevel,
       });
       // Ajouter le nouveau niveau au début du tableau
       setLevels([response.data, ...levels]);
-      setNewLevel('');
+      setNewLevel("");
       Swal.fire({
-        icon: 'success',
-        title: 'Succès',
-        text: 'Niveau créé avec succès',
+        icon: "success",
+        title: "Succès",
+        text: "Niveau créé avec succès",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (err) {
-      setError('Erreur lors de la création du niveau', err);
+      setError("Erreur lors de la création du niveau", err);
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Erreur lors de la création du niveau'
+        icon: "error",
+        title: "Erreur",
+        text: "Erreur lors de la création du niveau",
       });
     } finally {
       setLoading(false);
@@ -397,10 +418,10 @@ const Settings = () => {
   };
 
   const tabs = [
-    { id: 'academic', label: 'Année Académique', icon: FiCalendar },
-    { id: 'fees', label: 'Frais Scolarité', icon: FiDollarSign },
-    { id: 'levels', label: 'Niveaux', icon: FiUser },
-    { id: 'security', label: 'Sécurité', icon: FiLock },
+    { id: "academic", label: "Année Académique", icon: FiCalendar },
+    { id: "fees", label: "Frais Scolarité", icon: FiDollarSign },
+    { id: "levels", label: "Niveaux", icon: FiUser },
+    { id: "security", label: "Sécurité", icon: FiLock },
   ];
 
   return (
@@ -420,9 +441,10 @@ const Settings = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors
-              ${activeTab === tab.id 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-white text-gray-600 hover:bg-gray-50'
+              ${
+                activeTab === tab.id
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-50"
               }`}
           >
             <tab.icon className="mr-2 h-4 w-4" />
@@ -440,7 +462,7 @@ const Settings = () => {
         )}
 
         {/* Année Académique */}
-        {activeTab === 'academic' && (
+        {activeTab === "academic" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -448,29 +470,46 @@ const Settings = () => {
           >
             <div className="rounded-lg border border-gray-200 p-6">
               <h3 className="mb-4 text-lg font-medium">Années Académiques</h3>
-              
+
               {loadingYears ? (
                 <div className="animate-pulse space-y-4">
                   {Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="h-10 bg-gray-200 rounded w-full"></div>
+                    <div
+                      key={index}
+                      className="h-10 bg-gray-200 rounded w-full"
+                    ></div>
                   ))}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {academicYears.map(year => (
-                    <div key={year.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                  {academicYears.map((year) => (
+                    <div
+                      key={year.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                    >
                       <div className="flex items-center">
                         <span className="font-medium mr-3">{year.annee}</span>
                         {year.active && (
-                          <span className="text-xs text-green-500 bg-green-100 px-2 py-1 rounded">Active</span>
+                          <span className="text-xs text-green-500 bg-green-100 px-2 py-1 rounded">
+                            Active
+                          </span>
                         )}
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleUpdateYear(year.id, { ...year, active: !year.active })}
-                          className={`text-sm px-3 py-1 rounded ${year.active ? 'bg-gray-200 text-gray-700' : 'bg-green-500 text-white'}`}
+                          onClick={() =>
+                            handleUpdateYear(year.id, {
+                              ...year,
+                              active: !year.active,
+                            })
+                          }
+                          className={`text-sm px-3 py-1 rounded ${
+                            year.active
+                              ? "bg-gray-200 text-gray-700"
+                              : "bg-green-500 text-white"
+                          }`}
                         >
-                          {year.active ? 'Désactiver' : 'Activer'}
+                          {year.active ? "Désactiver" : "Activer"}
                         </button>
                         <button
                           onClick={() => handleDeleteYear(year.id)}
@@ -483,9 +522,11 @@ const Settings = () => {
                   ))}
                 </div>
               )}
-              
+
               <div className="mt-6 pt-4 border-t border-gray-200">
-                <h4 className="mb-3 text-md font-medium">Ajouter une nouvelle année</h4>
+                <h4 className="mb-3 text-md font-medium">
+                  Ajouter une nouvelle année
+                </h4>
                 <div className="flex gap-3">
                   <input
                     type="text"
@@ -502,14 +543,16 @@ const Settings = () => {
                     Ajouter
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Format attendu : AAAA-AAAA (ex: 2024-2025)</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Format attendu : AAAA-AAAA (ex: 2024-2025)
+                </p>
               </div>
             </div>
           </motion.div>
         )}
 
         {/* Frais Scolarité */}
-        {activeTab === 'fees' && (
+        {activeTab === "fees" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -521,7 +564,10 @@ const Settings = () => {
               <>
                 <div className="space-y-4">
                   {groupedTarifs.map((level) => (
-                    <div key={level.id} className="rounded-lg border border-gray-200">
+                    <div
+                      key={level.id}
+                      className="rounded-lg border border-gray-200"
+                    >
                       <button
                         onClick={() => toggleLevel(level.id)}
                         className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100"
@@ -537,7 +583,7 @@ const Settings = () => {
                         {openLevels[level.id] && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
+                            animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             className="p-6"
                           >
@@ -555,16 +601,23 @@ const Settings = () => {
                                       type="number"
                                       className="block w-full rounded-none rounded-r-md border p-2 text-sm"
                                       value={tarif.montant}
-                                      onChange={(e) => handleTarifChange(tarif.id, e.target.value)}
+                                      onChange={(e) =>
+                                        handleTarifChange(
+                                          tarif.id,
+                                          e.target.value
+                                        )
+                                      }
                                     />
                                   </div>
                                 </div>
                               ))}
                             </div>
-                            
+
                             {/* Ajout d'un nouveau tarif */}
                             <div className="mt-6 pt-4 border-t border-gray-200">
-                              <h4 className="mb-3 text-md font-medium">Ajouter un nouveau tarif</h4>
+                              <h4 className="mb-3 text-md font-medium">
+                                Ajouter un nouveau tarif
+                              </h4>
                               <div className="grid gap-4 md:grid-cols-2">
                                 <div>
                                   <label className="block text-sm font-medium text-gray-700">
@@ -574,7 +627,12 @@ const Settings = () => {
                                     type="text"
                                     className="mt-1 block w-full rounded-lg border p-2 text-sm"
                                     value={newTarif.designation}
-                                    onChange={(e) => setNewTarif({...newTarif, designation: e.target.value})}
+                                    onChange={(e) =>
+                                      setNewTarif({
+                                        ...newTarif,
+                                        designation: e.target.value,
+                                      })
+                                    }
                                   />
                                 </div>
                                 <div>
@@ -589,7 +647,12 @@ const Settings = () => {
                                       type="number"
                                       className="block w-full rounded-none rounded-r-md border p-2 text-sm"
                                       value={newTarif.montant}
-                                      onChange={(e) => setNewTarif({...newTarif, montant: e.target.value})}
+                                      onChange={(e) =>
+                                        setNewTarif({
+                                          ...newTarif,
+                                          montant: e.target.value,
+                                        })
+                                      }
                                     />
                                   </div>
                                 </div>
@@ -597,7 +660,11 @@ const Settings = () => {
                               <div className="mt-3 flex justify-end">
                                 <button
                                   onClick={() => handleAddTarif(level.id)}
-                                  disabled={loading || !newTarif.designation || !newTarif.montant}
+                                  disabled={
+                                    loading ||
+                                    !newTarif.designation ||
+                                    !newTarif.montant
+                                  }
                                   className="rounded-lg bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600 disabled:bg-gray-300"
                                 >
                                   Ajouter le tarif
@@ -615,8 +682,7 @@ const Settings = () => {
           </motion.div>
         )}
 
-        {/* Niveaux */}
-        {activeTab === 'levels' && (
+        {activeTab === "levels" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -625,28 +691,38 @@ const Settings = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-medium">Gestion des Niveaux</h3>
-                <p className="text-sm text-gray-500">Nombre de niveaux existants : {levels.length}</p>
+                <p className="text-sm text-gray-500">
+                  Nombre de niveaux existants : {levels.length}
+                </p>
               </div>
             </div>
 
             {loading ? (
               <div className="animate-pulse space-y-4">
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-10 bg-gray-200 rounded w-full"></div>
+                  <div
+                    key={index}
+                    className="h-10 bg-gray-200 rounded w-full"
+                  ></div>
                 ))}
               </div>
             ) : (
-              <div className="space-y-4">
-                {levels.map(level => (
-                  <div key={level.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
+                {levels.map((level) => (
+                  <div
+                    key={level.id}
+                    className="p-3 bg-gray-50 rounded-md text-center"
+                  >
                     <span className="font-medium">{level.nom}</span>
                   </div>
                 ))}
               </div>
             )}
-            
+
             <div className="mt-6 pt-4 border-t border-gray-200">
-              <h4 className="mb-3 text-md font-medium">Ajouter un nouveau niveau</h4>
+              <h4 className="mb-3 text-md font-medium">
+                Ajouter un nouveau niveau
+              </h4>
               <div className="flex gap-3">
                 <input
                   type="text"
@@ -668,7 +744,7 @@ const Settings = () => {
         )}
 
         {/* Sécurité */}
-        {activeTab === 'security' && (
+        {activeTab === "security" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -696,7 +772,9 @@ const Settings = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                 />
-                <p className="mt-1 text-xs text-gray-500">Le mot de passe doit contenir au moins 8 caractères</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Le mot de passe doit contenir au moins 8 caractères
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -716,7 +794,9 @@ const Settings = () => {
                 disabled={passwordLoading}
                 className="rounded-lg bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600 disabled:bg-gray-300"
               >
-                {passwordLoading ? 'Changement en cours...' : 'Changer le mot de passe'}
+                {passwordLoading
+                  ? "Changement en cours..."
+                  : "Changer le mot de passe"}
               </button>
             </div>
           </motion.div>
