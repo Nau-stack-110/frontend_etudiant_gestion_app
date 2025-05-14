@@ -374,7 +374,8 @@ const Settings = () => {
       const response = await axios.post(levelsUrl, {
         nom: newLevel
       });
-      setLevels([...levels, response.data]);
+      // Ajouter le nouveau niveau au début du tableau
+      setLevels([response.data, ...levels]);
       setNewLevel('');
       Swal.fire({
         icon: 'success',
@@ -396,7 +397,6 @@ const Settings = () => {
   };
 
   const tabs = [
-    { id: 'general', label: 'Général', icon: FiUser },
     { id: 'academic', label: 'Année Académique', icon: FiCalendar },
     { id: 'fees', label: 'Frais Scolarité', icon: FiDollarSign },
     { id: 'levels', label: 'Niveaux', icon: FiUser },
@@ -437,38 +437,6 @@ const Settings = () => {
           <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-4">
             {error}
           </div>
-        )}
-
-        {/* Paramètres généraux */}
-        {activeTab === 'general' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-6"
-          >
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Nom complet
-                </label>
-                <input
-                  type="text"
-                  className="mt-1 block w-full rounded-lg border p-2 text-sm"
-                  defaultValue="John Doe"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  className="mt-1 block w-full rounded-lg border p-2 text-sm"
-                  defaultValue="john.doe@univ.mg"
-                />
-              </div>
-            </div>
-          </motion.div>
         )}
 
         {/* Année Académique */}
