@@ -44,15 +44,15 @@ const AdminLayout = () => {
 
   const menuItems = [
     { path: '/admin/dashboard', icon: <FiHome />, label: 'Tableau de bord' },
+    { path: '/admin/mentions', icon: <FiBookmark />, label: 'Mentions' },
     { path: '/admin/distance', icon: <FiUsers />, label: 'Distance' },
     { path: '/admin/presentiel', icon: <FiCast />, label: 'Presentiel' },
+    { path: '/admin/fees', icon: <FiDollarSign />, label: 'Frais Scolarité' },
+    { path: '/admin/settings', icon: <FiSettings />, label: 'Paramètres' },
+    { path: '/admin/courses', icon: <FiGrid />, label: 'Parcours' },
     { path: '/admin/users', icon: <FiUserCheck />, label: 'Utilisateurs' },
     { path: '/admin/professors', icon: <FiUserCheck />, label: 'Professeurs' },
     { path: '/admin/subjects', icon: <FiBook />, label: 'Matières' },
-    { path: '/admin/mentions', icon: <FiBookmark />, label: 'Mentions' },
-    { path: '/admin/fees', icon: <FiDollarSign />, label: 'Frais Scolarité' },
-    { path: '/admin/courses', icon: <FiGrid />, label: 'Parcours' },
-    { path: '/admin/settings', icon: <FiSettings />, label: 'Paramètres' },
   ];
 
   const handleLogout = () => {

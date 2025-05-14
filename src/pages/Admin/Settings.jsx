@@ -26,7 +26,7 @@ const FeesSkeleton = () => (
 );
 
 const Settings = () => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('fees');
   const [academicYears, setAcademicYears] = useState([]);
   const [newYear, setNewYear] = useState('');
   const [loadingYears, setLoadingYears] = useState(true);
@@ -404,7 +404,7 @@ const Settings = () => {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-6">
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
